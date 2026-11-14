@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NakhlaGuard — الأدلة والمصادر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Tajawal:wght@400;500;700;800&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#14201B; --ink-soft:#4A5750; --sand:#EDE6D6; --sand-deep:#E1D8C2; --palm:#1F5C4A; --palm-deep:#123A2E; --date:#B8752E; --card:#FBF9F3; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{ font-family:'Tajawal','IBM Plex Sans',sans-serif; background:var(--sand); color:var(--ink); min-height:100vh; padding-bottom:40px }
+  html[lang=en] body{ font-family:'IBM Plex Sans',sans-serif }
+  #langToggle{ position:fixed; top:14px; left:14px; z-index:5; background:var(--palm-deep); color:#fff; border:1px solid #fff3; border-radius:999px; padding:6px 14px; cursor:pointer; font:inherit }
+  .wrap{ max-width:900px; margin:0 auto; padding:0 16px }
+  h1{ font-size:1.7rem; color:var(--palm-deep); margin:22px 0 6px }
+  .sub{ color:var(--ink-soft); line-height:1.9; margin-bottom:14px }
+  .legend, .filters{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 }
+  .chip{ border:1px solid var(--palm); background:#fff; color:var(--palm-deep); border-radius:999px; padding:7px 14px; font:inherit; font-size:.88rem; cursor:pointer }
+  .chip.on{ background:var(--palm); color:#fff }
+  .sum{ background:#fff; border-radius:14px; padding:12px 14px; margin:10px 0 16px; font-size:.92rem; line-height:1.8 }
+  .claim{ background:var(--card); border-radius:14px; padding:14px 16px; margin:10px 0; border-inline-start:6px solid var(--palm) }
+  .claim[data-kind=measured_sim]{ border-color:#1F618D } .claim[data-kind=measured_real]{ border-color:#2e7d4f } .claim[data-kind=literature]{ border-color:var(--date) } .claim[data-kind=not_claimed]{ border-color:#8a8f8c; background:#f1efe8 }
+  .top{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:6px }
+  .id{ font-weight:800; color:var(--palm-deep) } .kind{ font-size:.75rem; color:#fff; border-radius:999px; padding:2px 10px }
+  .k-measured_sim{ background:#1F618D } .k-measured_real{ background:#2e7d4f } .k-literature{ background:var(--date) } .k-not_claimed{ background:#8a8f8c }
+  .txt{ line-height:1.9 } .note{ margin-top:6px; font-size:.85rem; color:#7a2e1a; background:#faece7; border-radius:8px; padding:6px 10px; line-height:1.7 }
+  .refs{ margin-top:8px; display:flex; gap:6px; flex-wrap:wrap } .refs a{ font-size:.8rem; background:#fff; border:1px solid var(--sand-deep); border-radius:8px; padding:3px 9px; color:var(--palm-deep); text-decoration:none }
+  .repro{ margin-top:8px; font-size:.8rem; direction:ltr; text-align:left; background:#14201B; color:#d6e6dc; border-radius:8px; padding:7px 10px; overflow-x:auto; white-space:pre }
+  .refl{ list-style:none; padding:0 } .refl li{ margin-bottom:12px; line-height:1.8 }
+  .rv{ display:inline-block; border-radius:9px; padding:1px 9px; font-size:.72rem; color:#fff; margin-inline-start:6px; vertical-align:middle } .rv.full{ background:#2f6b3a } .rv.partial{ background:#a8631a } .rnote{ display:block; margin-top:4px; font-size:.82rem; color:#5a4a32; line-height:1.7 }
+  .ver{ margin-top:8px; font-size:.85rem } .badge{ color:#fff; border-radius:9px; padding:2px 9px; font-size:.75rem; margin-inline-end:6px }
+  .pass{ background:#2e7d4f } .fail{ background:#b3342d } .reported{ background:#1F618D } .skipped{ background:#8a8f8c }
+  h2{ font-size:1.2rem; color:var(--palm-deep); margin:26px 0 8px }
+  ol.refl{ padding-inline-start:22px; line-height:1.8; font-size:.9rem } ol.refl li{ margin:8px 0 } ol.refl a{ color:var(--palm-deep); word-break:break-all }
+
+  /* ---- Urdu (اردو): Noto Nastaliq Urdu, tall line-height, RTL ---- */
+  body.lang-ur, body.lang-ur *:not(code):not(.repro){ font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic','Tajawal',serif !important }
+  body.lang-ur{ line-height:2.1 }
+  body.lang-ur h1, body.lang-ur h2, body.lang-ur h3, body.lang-ur h4{ line-height:2 }
+  body.lang-ur button, body.lang-ur input, body.lang-ur select, body.lang-ur textarea, body.lang-ur .nk-tab{ line-height:1.8 }
+</style>
+</head>
+<body>
+<button id="langToggle" onclick="toggleLang()">English</button>
+<div class="wrap">
+  <h1 id="h1"></h1>
+  <p class="sub" id="sub"></p>
+  <div class="legend" id="legend"></div>
+  <div class="sum" id="sum"></div>
+  <div class="filters" id="filters"></div>
+  <div id="list"></div>
+  <h2 id="refh"></h2>
+  <p id="refsub" class="lead" style="margin:4px 0 10px"></p>
+  <ol class="refl" id="refs"></ol>
+</div>
+<script>
+const T = {
+  ar: { h1:"الأدلة والمصادر", sub:"كل رقم أو معلومة بالمشروع هنا بنوعه ومصدره. نثبت فقط ما يمكن إعادة حسابه بأمر تشغّله بنفسك، أو ما له مرجع منشور تفتح رابطه. وما لا نستطيع إثباته مكتوب صراحة تحت «لا نزعمه».",
+        all:"الكل", refh:"المراجع", vfull:"مراجَع كاملًا", vpart:"مراجَع جزئيًا", checked:"تاريخ المراجعة", refsub:"لكل مرجع حالة: «مراجَع كاملًا» أي قُرئ وقورنت الأرقام المقتبسة منه، و«مراجَع جزئيًا» أي تحقّقنا من بعضه وسبب ذلك مكتوب تحته.", repro:"أعد حسابه:", copy:"نسخ", copied:"تم النسخ", noRun:"لم يُشغَّل التحقق بعد: شغّل python verify_all.py", last:"آخر تحقق", measured:"المقيس الآن", pass:"مطابق", fail:"غير مطابق", reported:"مُعلَن", skipped:"لم يُشغَّل",
+        sum:(c, r) => `${c.measured_sim || 0} ادعاء مقيس بالمحاكاة، ${c.measured_real || 0} على تسجيلات حقيقية عامة، ${c.literature || 0} من مراجع منشورة، و${c.not_claimed || 0} نقول صراحة إننا لا نزعمها.` + (r ? ` آخر تشغيل للتحقق: ${r.time} (مطابق ${r.counts.pass}، غير مطابق ${r.counts.fail}، لم يُشغَّل ${r.counts.skipped}).` : " لم يُشغَّل التحقق التلقائي على هذا الجهاز بعد.") },
+  en: { h1:"Evidence and sources", sub:"Every number or fact in the project is here with its kind and source. We only state what you can recompute with a command you run yourself, or what has a published reference you can open. What we cannot prove is written openly under 'Not claimed'.",
+        all:"All", refh:"References", vfull:"Fully checked", vpart:"Partly checked", checked:"Checked on", refsub:"Each reference has a status: \"Fully checked\" means it was read and the numbers quoted from it were compared; \"Partly checked\" means only part was verified, and the reason is written under it.", repro:"Recompute it:", copy:"Copy", copied:"Copied", noRun:"Verification has not been run yet: run python verify_all.py", last:"Last verification", measured:"Measured now", pass:"matches", fail:"does not match", reported:"reported", skipped:"not run",
+        sum:(c, r) => `${c.measured_sim || 0} claims measured on simulation, ${c.measured_real || 0} on real public recordings, ${c.literature || 0} from published sources, and ${c.not_claimed || 0} we openly say we do not claim.` + (r ? ` Last verification run: ${r.time} (${r.counts.pass} match, ${r.counts.fail} do not match, ${r.counts.skipped} not run).` : " The automatic verification has not been run on this device yet.") },
+  ur: { h1:"ثبوت اور ذرائع", sub:"پروجیکٹ کا ہر عدد یا معلومات یہاں اپنی قسم اور ذریعے کے ساتھ موجود ہے۔ ہم صرف وہی بیان کرتے ہیں جسے آپ خود چلائے گئے کمانڈ سے دوبارہ حساب کر سکیں، یا جس کا شائع شدہ حوالہ آپ کھول سکیں۔ جو ہم ثابت نہیں کر سکتے وہ «ہم دعویٰ نہیں کرتے» کے تحت صاف لکھا ہے۔",
+        all:"سب", refh:"حوالہ جات", vfull:"مکمل جانچ", vpart:"جزوی جانچ", checked:"جانچ کی تاریخ", refsub:"ہر حوالے کی ایک حالت ہے: «مکمل جانچ» یعنی اسے پڑھا گیا اور اس سے لیے گئے اعداد کا موازنہ کیا گیا؛ «جزوی جانچ» یعنی صرف کچھ حصہ جانچا گیا اور وجہ نیچے لکھی ہے۔", repro:"دوبارہ حساب کریں:", copy:"کاپی", copied:"کاپی ہو گیا", noRun:"تصدیق ابھی نہیں چلائی گئی: python verify_all.py چلائیں", last:"آخری تصدیق", measured:"ابھی ناپا گیا", pass:"مطابق", fail:"مطابق نہیں", reported:"اعلان شدہ", skipped:"نہیں چلائی گئی",
+        sum:(c, r) => `${c.measured_sim || 0} دعوے سمولیشن پر ناپے گئے، ${c.measured_real || 0} عوامی حقیقی ریکارڈنگز پر، ${c.literature || 0} شائع شدہ ذرائع سے، اور ${c.not_claimed || 0} ایسے جن کے بارے میں ہم صاف کہتے ہیں کہ ہم دعویٰ نہیں کرتے۔` + (r ? ` تصدیق کا آخری رن: ${r.time} (${r.counts.pass} مطابق، ${r.counts.fail} غیر مطابق، ${r.counts.skipped} نہیں چلائے گئے)۔` : " خودکار تصدیق اس ڈیوائس پر ابھی نہیں چلائی گئی۔") },
+};
+function getLang(){ let l = null; try{ l = localStorage.getItem('nakhlaguard-lang'); }catch(e){} return ['ar','en','ur'].includes(l) ? l : 'ar'; }
+function setLang(l){ try{ localStorage.setItem('nakhlaguard-lang', l); }catch(e){} document.documentElement.lang = l; document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl'; document.body.classList.toggle('lang-ur', l === 'ur'); const b = document.getElementById('langToggle'); if(b) b.textContent = {ar:'English', en:'اردو', ur:'العربية'}[l]; render(); }
+function toggleLang(){ const c = ['ar','en','ur']; setLang(c[(c.indexOf(getLang()) + 1) % c.length]); }
+let REG = null, REP = null, filter = 'all';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render(){
+  if(!REG) return; const l = getLang(), t = T[l];
+  document.getElementById('h1').textContent = t.h1; document.getElementById('sub').textContent = t.sub; document.getElementById('refh').textContent = t.refh;
+  const counts = {}; REG.claims.forEach(c => counts[c.kind] = (counts[c.kind] || 0) + 1);
+  document.getElementById('sum').textContent = t.sum(counts, REP);
+  const kinds = Object.keys(REG.kinds);
+  document.getElementById('legend').innerHTML = kinds.map(k => `<span class="kind k-${k}">${esc(REG.kinds[k][l])}</span>`).join('');
+  document.getElementById('filters').innerHTML = `<button class="chip ${filter === 'all' ? 'on' : ''}" onclick="setFilter('all')">${t.all}</button>` + kinds.map(k => `<button class="chip ${filter === k ? 'on' : ''}" onclick="setFilter('${k}')">${esc(REG.kinds[k][l])} (${counts[k] || 0})</button>`).join('');
+  const checks = {}; if(REP) REP.checks.forEach(r => checks[r.id] = r);
+  document.getElementById('list').innerHTML = REG.claims.filter(c => filter === 'all' || c.kind === filter).map(c => {
+    const refs = (c.refs || []).map(id => `<a href="#ref-${id}">${id}</a>`).join('');
+    let ver = '';
+    if(c.kind === 'measured_sim' || c.kind === 'measured_real'){
+      const r = checks[c.id];
+      ver = r ? `<div class="ver"><span class="badge ${r.status}">${t[r.status]}</span>${t.measured}: <b>${esc(r.measured_text)}</b></div>` : `<div class="ver" style="color:#7a2e1a">${t.noRun}</div>`;
+    }
+    const note = c['note_' + l] ? `<div class="note">${esc(c['note_' + l])}</div>` : '';
+    const repro = c.reproduce ? `<div class="repro">${esc(c.reproduce)}</div>` : '';
+    return `<div class="claim" data-kind="${c.kind}"><div class="top"><span class="id">${c.id}</span><span class="kind k-${c.kind}">${esc(REG.kinds[c.kind][l])}</span></div><div class="txt">${esc(c[l] || c.en)}</div>${note}${ver}${refs ? `<div class="refs">${refs}</div>` : ''}${repro}</div>`;
+  }).join('');
+  document.getElementById('refsub').textContent = t.refsub;
+  document.getElementById('refs').innerHTML = REG.references.map(r => {
+    const rn = r['note_' + l] || '';
+    const badge = r.verified ? `<span class="rv ${r.verified}">${r.verified === 'full' ? t.vfull : t.vpart}${r.checked ? ' · ' + esc(r.checked) : ''}</span>` : '';
+    return `<li id="ref-${r.id}"><b>${r.id}</b> ${esc(r.cite)} ${badge}${rn ? `<span class="rnote">${esc(rn)}</span>` : ''}<br><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`;
+  }).join('');
+}
+function setFilter(f){ filter = f; render(); }
+(async function(){
+  try{ REG = await (await fetch('/claims.json')).json(); }catch(e){ document.getElementById('sub').textContent = 'claims.json not found'; return; }
+  try{ const r = await fetch('/verification_report.json'); if(r.ok) REP = await r.json(); }catch(e){}
+  setLang(getLang());
+})();
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

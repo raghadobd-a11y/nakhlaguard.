@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NakhlaGuard — Early Red Palm Weevil Detection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=Tajawal:wght@400;500;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#14201B; --ink-soft:#4A5750; --sand:#EDE6D6; --sand-deep:#E1D8C2;
@@ -19,12 +19,22 @@
     line-height:1.65; font-size:16px;
   }
   h1,h2,h3{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em}
+  body.rtl{font-family:'Tajawal',sans-serif; direction:rtl}
+  body.rtl h1, body.rtl h2, body.rtl h3, body.rtl .stat .num, body.rtl .compare h4{font-family:'Tajawal',sans-serif; letter-spacing:0}
   .wrap{max-width:920px;margin:0 auto;padding:0 24px}
   a{color:inherit}
 
+  #langToggle{
+    position:fixed; top:14px; right:14px; z-index:1000; width:auto; margin:0;
+    background:var(--ink); border:1px solid rgba(237,230,214,.35); color:var(--sand);
+    padding:7px 16px; border-radius:20px; font-size:.78rem; cursor:pointer; font-family:inherit;
+    box-shadow:0 2px 10px rgba(0,0,0,.3);
+  }
+  #langToggle:hover{border-color:var(--sand)}
+
   .hero{
     background:radial-gradient(ellipse at 30% -10%, var(--palm) 0%, var(--palm-deep) 55%, var(--ink) 100%);
-    color:var(--sand); padding:72px 0 56px; position:relative; overflow:hidden;
+    color:var(--sand); padding:56px 0; position:relative; overflow:hidden;
   }
   .hero-grid{
     display:grid; grid-template-columns:1.15fr 0.85fr; gap:40px; align-items:center;
@@ -35,9 +45,10 @@
     font-size:.8rem; color:var(--date-light); font-weight:600; margin-bottom:14px;
     display:flex; align-items:center; gap:8px;
   }
-  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--date-light)}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--date-light); flex-shrink:0}
 
-  .hero h1{font-size:2.6rem; line-height:1.08; margin-bottom:16px}
+  .hero h1{font-size:2.6rem; line-height:1.15; margin-bottom:16px}
+  body.rtl .hero h1{font-size:2.3rem}
   .hero h1 span{color:var(--date-light)}
   .hero p.tag{font-size:1.05rem; color:#D8E2DC; max-width:440px; margin-bottom:28px}
 
@@ -45,7 +56,7 @@
   .btn{
     display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border-radius:8px;
     font-weight:600; font-size:.92rem; text-decoration:none; border:1.5px solid transparent;
-    transition:transform .15s ease, background .15s ease;
+    transition:transform .15s ease, background .15s ease; font-family:inherit;
   }
   .btn:hover{transform:translateY(-1px)}
   .btn-fill{background:var(--date); color:var(--ink)}
@@ -71,6 +82,7 @@
     margin-bottom:8px;
   }
   h2{font-size:1.55rem; margin-bottom:16px; color:var(--palm-deep)}
+  body.rtl h2{font-size:1.45rem}
   p.lead{color:var(--ink-soft); max-width:640px; font-size:.98rem}
 
   .stat-row{display:flex; gap:16px; flex-wrap:wrap; margin-top:22px}
@@ -105,6 +117,7 @@
   .compare li{font-size:.88rem; color:var(--ink-soft)}
   .compare .col.us li{color:var(--ink)}
   .compare li::before{content:"—"; margin-right:8px; color:var(--date)}
+  body.rtl .compare li::before{margin-right:0; margin-left:8px}
 
   .final{
     background:var(--palm-deep); color:var(--sand); border-radius:16px; padding:40px;
@@ -113,27 +126,108 @@
   .final h2{color:var(--sand)}
   .final p{color:#CBD9D3; margin-bottom:22px}
 
+  .mobile-teaser{
+    display:flex; align-items:center; gap:18px; background:var(--card);
+    border:1.5px dashed var(--date); border-radius:14px; padding:20px 24px;
+  }
+  .mobile-teaser-icon{font-size:2rem; flex-shrink:0}
+  .mobile-teaser-title{font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--palm-deep); font-size:1rem; margin-bottom:4px}
+  body.rtl .mobile-teaser-title{font-family:'Tajawal',sans-serif}
+  .mobile-teaser-sub{color:var(--ink-soft); font-size:.88rem; line-height:1.6}
+  @media(max-width:520px){ .mobile-teaser{flex-direction:column; text-align:center} }
+
   footer{text-align:center; padding:28px 0; color:var(--ink-soft); font-size:.8rem}
+
+  .cmp-wrap{overflow-x:auto; margin-top:22px; border-radius:12px}
+  .cmp-table{width:100%; border-collapse:collapse; background:var(--card); font-size:.86rem; min-width:560px}
+  .cmp-table th, .cmp-table td{padding:12px 14px; text-align:start; border-bottom:1px solid var(--sand-deep); vertical-align:top}
+  .cmp-table thead th{background:var(--palm-deep); color:var(--sand); font-weight:600}
+  .cmp-table td:first-child{font-weight:600; color:var(--palm-deep); white-space:nowrap}
+  .cmp-table td.us, .cmp-table th.us{background:#F2F6F3}
+  .cmp-table thead th.us{background:var(--palm)}
+  .flow{display:flex; align-items:stretch; gap:8px; margin-top:22px; flex-wrap:wrap}
+  .flow-node{flex:1; min-width:150px; background:var(--card); border-radius:12px; padding:16px 14px; border-top:3px solid var(--date); text-align:center}
+  .flow-node.dev{border-top-color:var(--palm)}
+  .flow-node .ic{font-size:1.7rem; line-height:1.2}
+  .flow-node h3{font-size:.95rem; margin:6px 0 4px; color:var(--palm-deep)}
+  .flow-node p{font-size:.8rem; color:var(--ink-soft); line-height:1.6}
+  .flow-arrow{align-self:center; color:var(--date); font-size:1.3rem; flex:0 0 auto}
+  .flow-arrow::before{content:"\2192"}
+  body.rtl .flow-arrow::before{content:"\2190"}
+  @media(max-width:700px){ .flow{flex-direction:column} .flow-arrow::before, body.rtl .flow-arrow::before{content:"\2193"} .flow-node{min-width:0} }
+  .vgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:22px}
+  .vcard{background:var(--card); border-radius:12px; padding:18px; border-top:3px solid var(--palm)}
+  .vcard.hl{border-top-color:var(--date); background:#FFF9EC}
+  .vcard .ic{font-size:1.6rem; line-height:1.2}
+  .vcard h3{font-size:.98rem; margin:6px 0 4px; color:var(--palm-deep)}
+  .vcard p{font-size:.84rem; color:var(--ink-soft); line-height:1.75}
+  .fm-box{margin-top:20px; background:var(--palm-deep); color:var(--sand); border-radius:14px; padding:20px}
+  .fm-box .hcount{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:.95rem; margin-bottom:6px}
+  .fm-box .hcount b{font-family:'Space Grotesk',sans-serif; font-size:1.8rem; color:#F3C677; line-height:1}
+  .fm-box .hnote{font-size:.8rem; color:#cfd8cf; line-height:1.8; margin-bottom:14px}
+  .fm-box .btn-line{border-color:rgba(237,230,214,.55); color:var(--sand)}
+  .dev-note{margin-top:16px; background:#FAECE7; color:#7A2E1A; border-radius:10px; padding:10px 14px; font-size:.84rem; line-height:1.8}
+  .dev-note a{color:inherit; font-weight:600}
+  .cmp-note{font-size:.76rem; color:var(--ink-soft); margin-top:10px}
+  .pest-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:22px}
+  @media(max-width:600px){.pest-grid{grid-template-columns:1fr}}
+  .pest-card{background:var(--card); border-radius:12px; padding:16px; text-align:center}
+  .pest-card svg{width:100%; max-width:260px; height:auto}
+  .pest-card .cap{font-size:.82rem; font-weight:600; color:var(--palm-deep); margin-top:6px}
+  .roadmap{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px}
+  @media(max-width:600px){.roadmap{grid-template-columns:1fr}}
+  .rm-card{background:var(--card); border-radius:12px; padding:16px 18px; border-inline-start:4px solid var(--date)}
+  .rm-card h3{font-size:.95rem; color:var(--palm-deep); margin-bottom:4px}
+  .rm-card p{font-size:.85rem; color:var(--ink-soft)}
+  .rm-note{font-size:.78rem; color:var(--ink-soft); margin-top:12px; font-style:italic}
+  .btn-xl{ font-size:1.12rem; padding:16px 30px; box-shadow:0 6px 18px rgba(0,0,0,.25) }
+  .hero-steps{ list-style:none; display:flex; gap:10px 20px; flex-wrap:wrap; margin:20px 0 0; padding:0 }
+  .hero-steps li{ display:flex; align-items:center; gap:9px; color:#EDE6D6; font-size:.95rem }
+  .hero-steps b{ width:26px; height:26px; border-radius:50%; background:#B8752E; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.85rem; flex:none }
+  .hero-links{ display:flex; gap:6px 18px; flex-wrap:wrap; margin-top:16px }
+  .hero-links a{ color:#cfd8cf; font-size:.88rem; text-decoration:underline; text-underline-offset:3px }
+
+  /* ---- Urdu (اردو): Noto Nastaliq Urdu, tall line-height, RTL ---- */
+  body.lang-ur, body.lang-ur *:not(code):not(.repro){ font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic','Tajawal',serif !important }
+  body.lang-ur{ line-height:2.1 }
+  body.lang-ur h1, body.lang-ur h2, body.lang-ur h3, body.lang-ur h4{ line-height:2 }
+  body.lang-ur button, body.lang-ur input, body.lang-ur select, body.lang-ur textarea, body.lang-ur .nk-tab{ line-height:1.8 }
 </style>
 </head>
 <body>
 
+<button id="langToggle" onclick="toggleLang()">العربية</button>
+
 <div class="hero">
   <div class="wrap hero-grid">
     <div>
-      <div class="eyebrow"><span class="dot"></span>SAIF 2026 — Marine, Agricultural &amp; Food Tech Track</div>
-      <h1>Listening to palm trees <span>before it's too late.</span></h1>
-      <p class="tag">NakhlaGuard detects Red Palm Weevil infestations from trunk vibration sound, weeks before any visible symptom appears — using a sensor that costs under 30 USD.</p>
+      <h1 data-en="Listening to palm trees <span>before it's too late.</span>" data-ar="نُصغي إلى جذع النخلة <span>قبل فوات الأوان.</span>" data-ur="کھجور کے تنے کی آواز سنیں <span>اس سے پہلے کہ دیر ہو جائے۔</span>">Listening to palm trees <span>before it's too late.</span></h1>
+      <p class="tag" data-en="NakhlaGuard is a prototype in two parts: a device fixed on the palm trunk that listens for Red Palm Weevil larvae, and this website that analyzes the sound and alerts the farmer." data-ar="NakhlaGuard نموذج أولي من جزأين: جهاز يُثبَّت على جذع النخلة ويُصغي إلى يرقات سوسة النخيل الحمراء، وموقع يحلّل الصوت ويُنبّه المزارع." data-ur="NakhlaGuard دو حصوں کا ابتدائی نمونہ ہے: کھجور کے تنے پر لگنے والی ڈیوائس جو ریڈ پام ویول کے لاروے کی آواز سنتی ہے، اور یہ ویب سائٹ جو آواز کا تجزیہ کر کے کسان کو الرٹ کرتی ہے۔">NakhlaGuard is a prototype in two parts: a device fixed on the palm trunk that listens for Red Palm Weevil larvae, and this website that analyzes the sound and alerts the farmer.</p>
       <div class="cta-row">
-        <a href="/test.html" class="btn btn-fill">Run a live test</a>
-        <a href="/agent.html" class="btn btn-fill">Ask the AI Assistant</a>
-        <a href="/dashboard.html" class="btn btn-line">Farmer alert dashboard</a>
-        <a href="/palms.html" class="btn btn-line">Palm registry</a>
+        <a href="/test.html" class="btn btn-fill btn-xl" data-en="Check your palm now" data-ar="افحص نخلتك الآن" data-ur="ابھی اپنی کھجور جانچیں">Check your palm now</a>
+        <a href="/test.html#samples" class="btn btn-line" data-en="Try a ready sample" data-ar="جرّب بتسجيل جاهز" data-ur="تیار نمونہ آزمائیں">Try a ready sample</a>
+        <a href="#device" class="btn btn-line" data-en="Meet the device" data-ar="تعرّف على الجهاز" data-ur="ڈیوائس کو جانیں">Meet the device</a>
+        <a href="/dashboard.html" class="btn btn-line" data-en="Farmer alerts" data-ar="تنبيهات المزارع" data-ur="کسان الرٹس">Farmer alerts</a>
+      </div>
+      <ul class="hero-steps">
+        <li><b>1</b><span data-en="The device listens to the trunk" data-ar="يُصغي الجهاز إلى الجذع" data-ur="ڈیوائس تنے کی آواز سنتی ہے">The device listens to the trunk</span></li>
+        <li><b>2</b><span data-en="The website's AI analyzes it in seconds" data-ar="يحلّله ذكاء الموقع خلال ثوانٍ" data-ur="ویب سائٹ کی مصنوعی ذہانت چند سیکنڈ میں تجزیہ کرتی ہے">The website's AI analyzes it in seconds</span></li>
+        <li><b>3</b><span data-en="You get the alert, the report and the position on the trunk" data-ar="يصلك التنبيه والتقرير والموضع على الجذع" data-ur="آپ کو الرٹ، رپورٹ اور تنے پر مقام مل جاتا ہے">You get the alert, the report and the position on the trunk</span></li>
+      </ul>
+      <div class="hero-links">
+        <a href="/locate.html" data-en="Mark signs on a photo" data-ar="تحديد العلامات بالصورة" data-ur="تصویر پر علامات نشان زد کریں">Mark signs on a photo</a>
+        <a data-en="🧑‍🌾 Request a farmer" data-ar="🧑‍🌾 اطلب مزارعًا" data-ur="🧑‍🌾 کسان کی درخواست" href="/farmers.html">🧑‍🌾 Request a farmer</a>
+        <a href="/palms.html" data-en="Palm registry" data-ar="سجل النخيل" data-ur="کھجوروں کا ریکارڈ">Palm registry</a>
+        <a href="/instructions.html" data-en="How to use" data-ar="كيف تستخدم التطبيق" data-ur="استعمال کا طریقہ">How to use</a>
+        <a href="/evidence.html" data-en="Evidence and sources" data-ar="الأدلة والمصادر" data-ur="ثبوت اور ذرائع">Evidence and sources</a>
       </div>
     </div>
     <div class="wave-box">
       <div class="wave-bars" id="waveBars"></div>
-      <div class="wave-label"><span>Trunk audio input</span><span>Listening…</span></div>
+      <div class="wave-label">
+        <span data-en="Trunk audio input" data-ar="إدخال صوت الجذع" data-ur="تنے کی آواز کا ان پٹ">Trunk audio input</span>
+        <span data-en="Listening…" data-ar="جارٍ الاستماع…" data-ur="سن رہا ہے…">Listening…</span>
+      </div>
     </div>
   </div>
 </div>
@@ -141,47 +235,124 @@
 <div class="wrap">
 
   <section>
-    <div class="kicker">The problem</div>
-    <h2>By the time you can see it, it's already too late</h2>
-    <p class="lead">
-      Red Palm Weevil larvae feed inside the trunk for months before any external
-      sign appears. Farmers currently rely on manual trunk-tapping, trained sniffer
-      dogs, or waiting for visible damage — by then, the palm is usually beyond saving.
+    <div class="kicker" data-en="The problem" data-ar="المشكلة" data-ur="مسئلہ">The problem</div>
+    <h2 data-en="Damage is often noticed late" data-ar="كثيرًا ما يُكتشف الضرر متأخرًا" data-ur="نقصان اکثر دیر سے نظر آتا ہے">Damage is often noticed late</h2>
+    <p class="lead" data-en="Red Palm Weevil larvae feed hidden inside the trunk, so an infestation is hard to detect before damage becomes visible. The figures below come from published sources, listed on the Evidence page." data-ar="تتغذى يرقات سوسة النخيل الحمراء مختبئة داخل الجذع، ولذلك يصعب كشف الإصابة قبل أن يظهر الضرر. الأرقام أدناه من مصادر منشورة، وهي مذكورة في صفحة الأدلة." data-ur="ریڈ پام ویول کے لاروے تنے کے اندر چھپ کر کھاتے ہیں، اس لیے نقصان ظاہر ہونے سے پہلے حملے کو پہچاننا مشکل ہوتا ہے۔ نیچے دیے گئے اعداد شائع شدہ ذرائع سے ہیں، جو ثبوت کے صفحے پر درج ہیں۔">
+      Red Palm Weevil larvae feed hidden inside the trunk, so an infestation is hard to detect before damage becomes visible. The figures below come from published sources, listed on the Evidence page.
     </p>
     <div class="stat-row">
-      <div class="stat"><div class="num">Billions SAR</div><div class="label">annual losses in Saudi Arabia</div></div>
-      <div class="stat"><div class="num">Weeks earlier</div><div class="label">than visible symptoms</div></div>
-      <div class="stat"><div class="num">No cure</div><div class="label">once infestation is advanced</div></div>
+      <div class="stat"><div class="num" data-en="$400M+" data-ar="+400 مليون دولار" data-ur="400 ملین ڈالر+">$400M+</div><div class="label" data-en="losses from Red Palm Weevil on Saudi date farms in 2022" data-ar="خسائر سوسة النخيل في مزارع التمور السعودية عام 2022" data-ur="2022 میں سعودی کھجور فارموں پر ریڈ پام ویول سے نقصانات">losses from Red Palm Weevil on Saudi date farms in 2022</div></div>
+      <div class="stat"><div class="num" data-en="53%" data-ar="53%" data-ur="53%">53%</div><div class="label" data-en="of Saudi date farms had the weevil detected in 2022" data-ar="من مزارع التمور السعودية رُصدت فيها السوسة عام 2022" data-ur="2022 میں 53% سعودی کھجور فارموں میں یہ کیڑا پایا گیا">of Saudi date farms had the weevil detected in 2022</div></div>
+      <div class="stat"><div class="num" data-en="33M+" data-ar="+33 مليون" data-ur="33 ملین+">33M+</div><div class="label" data-en="palm trees in the Kingdom, about 27% of the world's" data-ar="نخلة في المملكة، أي نحو 27% من نخيل العالم" data-ur="مملکت میں کھجور کے درخت، دنیا کے تقریباً 27%">palm trees in the Kingdom, about 27% of the world's</div></div>
+    </div>
+    <p class="cmp-note" data-en="Sources: AGBI, 1 Dec 2025 (first two figures, a news report); Arab News, 17 Apr 2025 (third). Details and links: Evidence page, R19 and R16." data-ar="المصادر: AGBI بتاريخ 1 ديسمبر 2025 (الرقمان الأولان، وهو تقرير صحفي)؛ Arab News بتاريخ 17 أبريل 2025 (الثالث). التفاصيل والروابط في صفحة الأدلة: R19 وR16." data-ur="ذرائع: AGBI، 1 دسمبر 2025 (پہلے دو اعداد، ایک خبری رپورٹ)؛ Arab News، 17 اپریل 2025 (تیسرا)۔ تفصیل اور لنک: ثبوت کا صفحہ، R19 اور R16۔">Sources: AGBI, 1 Dec 2025 (first two figures, a news report); Arab News, 17 Apr 2025 (third). Details and links: Evidence page, R19 and R16.</p>
+  </section>
+
+  <section id="why">
+    <div class="kicker" data-en="Why it matters" data-ar="لماذا يهمّ" data-ur="یہ کیوں اہم ہے">Why it matters</div>
+    <h2 data-en="What NakhlaGuard gives a palm owner" data-ar="ما الذي يقدّمه NakhlaGuard لصاحب النخلة؟" data-ur="NakhlaGuard کھجور کے مالک کو کیا دیتا ہے">What NakhlaGuard gives a palm owner</h2>
+    <p class="lead" data-en="Infestation is usually noticed once damage shows, and the owner is sometimes far from the farm. So the site brings together, in one place, what is needed from the first suspicion until someone reaches the palm." data-ar="تُكتشف الإصابة عادةً بعد ظهور الضرر، وقد يكون صاحب النخلة بعيدًا عن مزرعته. لذلك يجمع الموقع في مكان واحد ما يلزم من أول شكّ حتى وصول من يعتني بالنخلة." data-ur="حملہ عموماً نقصان ظاہر ہونے کے بعد معلوم ہوتا ہے، اور مالک کبھی باغ سے دور ہوتا ہے۔ اس لیے سائٹ پہلے شک سے لے کر کھجور تک کسی کے پہنچنے تک کی ضرورت کی چیزیں ایک جگہ جمع کرتی ہے۔">Infestation is usually noticed once damage shows, and the owner is sometimes far from the farm. So the site brings together, in one place, what is needed from the first suspicion until someone reaches the palm.</p>
+    <div class="vgrid">
+      <div class="vcard"><div class="ic" aria-hidden="true">🎧</div><h3 data-en="Listens from the inside" data-ar="يُصغي من الداخل" data-ur="اندر سے سنتا ہے">Listens from the inside</h3><p data-en="Picks up trunk vibration instead of waiting for damage to show on the surface." data-ar="يلتقط اهتزاز الجذع بدل انتظار ظهور الضرر على السطح." data-ur="سطح پر نقصان ظاہر ہونے کا انتظار کرنے کے بجائے تنے کی کمپن پکڑتا ہے۔">Picks up trunk vibration instead of waiting for damage to show on the surface.</p></div>
+      <div class="vcard"><div class="ic" aria-hidden="true">🔔</div><h3 data-en="An alert wherever you are" data-ar="تنبيه أينما كنت" data-ur="جہاں بھی ہوں الرٹ">An alert wherever you are</h3><p data-en="An instant notice reaches the alerts dashboard as soon as a reading crosses the risk threshold, along with a backup contact for the farm." data-ar="يصل إشعار فوري إلى لوحة التنبيهات بمجرد أن تتجاوز القراءة حدّ الخطورة، ومعه جهة اتصال احتياطية للمزرعة." data-ur="جیسے ہی کوئی ریڈنگ خطرے کی حد عبور کرتی ہے الرٹس ڈیش بورڈ پر فوری اطلاع آتی ہے، ساتھ فارم کا متبادل رابطہ بھی۔">An instant notice reaches the alerts dashboard as soon as a reading crosses the risk threshold, along with a backup contact for the farm.</p></div>
+      <div class="vcard hl"><div class="ic" aria-hidden="true">🧑‍🌾</div><h3 data-en="A farmer to visit your palm" data-ar="مزارع يزور نخلتك" data-ur="آپ کی کھجور کو دیکھنے کسان">A farmer to visit your palm</h3><p data-en="If you are out of the area, ask a nearby registered farmer to visit the palm and contact you directly." data-ar="إن كنت خارج المنطقة فاطلب من مزارع مسجّل قريب أن يزور النخلة ويتواصل معك مباشرة." data-ur="اگر آپ علاقے سے باہر ہیں تو قریبی رجسٹرڈ کسان سے کہیں کہ کھجور کو دیکھے اور آپ سے براہِ راست رابطہ کرے۔">If you are out of the area, ask a nearby registered farmer to visit the palm and contact you directly.</p></div>
+      <div class="vcard"><div class="ic" aria-hidden="true">📍</div><h3 data-en="Where to look on the trunk" data-ar="أين يُفحص الجذع" data-ur="تنے پر کہاں دیکھیں">Where to look on the trunk</h3><p data-en="Shows the vibration source on a 3D trunk so the inspector knows where to start. (An estimate, not yet calibrated.)" data-ar="يعرض موضع مصدر الاهتزاز على جذع ثلاثي الأبعاد ليعرف من يفحص النخلة من أين يبدأ. (تقدير غير معايَر بعد.)" data-ur="کمپن کا ماخذ تھری ڈی تنے پر دکھاتا ہے تاکہ معائنہ کرنے والا جان سکے کہ کہاں سے شروع کرنا ہے۔ (تخمینہ، ابھی کیلیبریٹ نہیں۔)">Shows the vibration source on a 3D trunk so the inspector knows where to start. (An estimate, not yet calibrated.)</p></div>
+      <div class="vcard"><div class="ic" aria-hidden="true">🗂️</div><h3 data-en="A record for each palm" data-ar="سجل لكل نخلة" data-ur="ہر کھجور کا ریکارڈ">A record for each palm</h3><p data-en="Check history and a QR code for each palm, plus periodic-check reminders." data-ar="تاريخ الفحوص ورمز QR لكل نخلة، مع تذكير بالفحص الدوري." data-ur="ہر کھجور کی جانچ کی تاریخ اور QR کوڈ، ساتھ دورانی جانچ کی یاددہانی۔">Check history and a QR code for each palm, plus periodic-check reminders.</p></div>
+      <div class="vcard"><div class="ic" aria-hidden="true">📝</div><h3 data-en="A report in your language" data-ar="تقرير بلغتك" data-ur="آپ کی زبان میں رپورٹ">A report in your language</h3><p data-en="A treatment recommendation and a printable report in Arabic, English or Urdu." data-ar="توصية علاج وتقرير قابل للطباعة بالعربية أو الإنجليزية أو الأردية." data-ur="علاج کی تجویز اور قابلِ پرنٹ رپورٹ، عربی، انگریزی یا اردو میں۔">A treatment recommendation and a printable report in Arabic, English or Urdu.</p></div>
+    </div>
+    <p class="cmp-note" data-en="The above describes what the prototype does. Its accuracy on real infested palms has not been measured yet; see the Evidence page." data-ar="ما سبق وصف لما يفعله النموذج الأولي. أما دقته على نخيل مصاب حقيقي فلم تُقَس بعد؛ انظر صفحة الأدلة." data-ur="اوپر کی باتیں بتاتی ہیں کہ ابتدائی نمونہ کیا کرتا ہے۔ حقیقی متاثرہ کھجوروں پر اس کی درستگی ابھی ناپی نہیں گئی؛ ثبوت کا صفحہ دیکھیں۔">The above describes what the prototype does. Its accuracy on real infested palms has not been measured yet; see the Evidence page.</p>
+  </section>
+
+  <section>
+    <div class="kicker" data-en="Know the pest" data-ar="تعرّف على الآفة" data-ur="کیڑے کو جانیں">Know the pest</div>
+    <h2 data-en="Red Palm Weevil (Rhynchophorus ferrugineus)" data-ar="سوسة النخيل الحمراء (Rhynchophorus ferrugineus)" data-ur="ریڈ پام ویول (Rhynchophorus ferrugineus)">Red Palm Weevil (Rhynchophorus ferrugineus)</h2>
+    <p class="lead" data-en="The adult is a reddish-brown beetle with a long, curved snout. Its larvae are creamy, legless grubs that feed hidden inside the trunk." data-ar="الحشرة البالغة خنفساء بنية محمرة ذات خرطوم طويل منحنٍ، أما اليرقات فهي ديدان كريمية اللون عديمة الأرجل تتغذى مختبئة داخل الجذع." data-ur="بالغ کیڑا سرخی مائل بھورا بھونرا ہوتا ہے جس کی لمبی، مڑی ہوئی سونڈ ہوتی ہے۔ اس کے لاروے کریمی رنگ کے، بغیر ٹانگوں کے سنڈے ہوتے ہیں جو تنے کے اندر چھپ کر کھاتے ہیں۔">The adult is a reddish-brown beetle with a long, curved snout. Its larvae are creamy, legless grubs that feed hidden inside the trunk.</p>
+    <div class="pest-grid">
+      <div class="pest-card">
+        <svg viewBox="0 0 220 140" role="img" aria-label="Adult red palm weevil illustration">
+          <path d="M40 62 C14 70 8 96 22 114" stroke="#5C2610" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M36 56 C26 44 18 40 10 42" stroke="#5C2610" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="146" cy="68" rx="58" ry="32" fill="#7A3018"/>
+          <path d="M100 68 H198" stroke="#5C2610" stroke-width="2"/>
+          <ellipse cx="88" cy="60" rx="30" ry="23" fill="#9C4322"/>
+          <circle cx="50" cy="62" r="15" fill="#8B3A1F"/>
+          <circle cx="54" cy="57" r="3" fill="#111"/>
+          <path d="M96 88 L84 120 M126 97 L120 128 M160 96 L172 126" stroke="#4A1F0E" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>
+        <div class="cap" data-en="Adult weevil (illustration)" data-ar="الحشرة البالغة (رسم توضيحي)" data-ur="بالغ کیڑا (خاکہ)">Adult weevil (illustration)</div>
+      </div>
+      <div class="pest-card">
+        <svg viewBox="0 0 220 140" role="img" aria-label="Red palm weevil larva illustration">
+          <path d="M62 104 C20 92 28 30 104 30 C176 30 192 92 150 112" stroke="#E8D5A8" stroke-width="28" fill="none" stroke-linecap="round"/>
+          <path d="M62 104 C20 92 28 30 104 30 C176 30 192 92 150 112" stroke="#C9AE74" stroke-width="28" fill="none" stroke-dasharray="2 13"/>
+          <circle cx="152" cy="112" r="15" fill="#8B4A22"/>
+          <circle cx="158" cy="108" r="2.6" fill="#111"/>
+          <path d="M162 121 L172 126 M160 124 L166 132" stroke="#5C2610" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="cap" data-en="Larva, feeding inside the trunk (illustration)" data-ar="اليرقة تتغذى داخل الجذع (رسم توضيحي)" data-ur="لاروا تنے کے اندر خوراک کھاتا ہوا (خاکہ)">Larva, feeding inside the trunk (illustration)</div>
+      </div>
+    </div>
+    <p class="cmp-note" data-en="Stylized illustrations, not photographs." data-ar="رسوم توضيحية مبسّطة وليست صورًا فوتوغرافية." data-ur="سادہ خاکے ہیں، حقیقی تصاویر نہیں۔">Stylized illustrations, not photographs.</p>
+  </section>
+
+  <section>
+    <div class="kicker" data-en="The solution" data-ar="الحل" data-ur="حل">The solution</div>
+    <h2 data-en="A simple sensor, a trained ear, a quick decision" data-ar="مستشعر بسيط، وأذن مدرَّبة، وقرار سريع" data-ur="سادہ سینسر، تربیت یافتہ کان، اور تیز فیصلہ">A simple sensor, a trained ear, a quick decision</h2>
+    <p class="lead" data-en="NakhlaGuard listens to trunk vibration through a contact sensor, and a machine learning model trained to recognize the acoustic signature of larvae feeding inside the wood. The system classifies severity across four stages and gives an immediate treatment recommendation." data-ar="يُصغي NakhlaGuard إلى اهتزاز الجذع عبر مستشعر ملامس، ويستعين بنموذج تعلّم آلي مدرَّب على التعرّف على البصمة الصوتية لليرقات وهي تتغذى داخل الخشب. ويصنّف النظام الشدة على أربع مراحل ويقدّم توصية علاج فورية." data-ur="NakhlaGuard ایک کانٹیکٹ سینسر کے ذریعے تنے کی کمپن سنتا ہے، اور مشین لرننگ ماڈل لکڑی کے اندر لاروے کے کھانے کی صوتی پہچان سیکھ کر شناخت کرتا ہے۔ نظام شدت کو چار مراحل میں درجہ بند کرتا ہے اور فوری علاج کی سفارش دیتا ہے۔">NakhlaGuard listens to trunk vibration through a contact sensor, and a machine learning model trained to recognize the acoustic signature of larvae feeding inside the wood. The system classifies severity across four stages and gives an immediate treatment recommendation.</p>
+  </section>
+
+  <section id="device">
+    <div class="kicker" data-en="The device" data-ar="الجهاز" data-ur="ڈیوائس">The device</div>
+    <h2 data-en="A device on the trunk, a website that analyzes" data-ar="جهاز على الجذع، وموقع يحلّل" data-ur="تنے پر ڈیوائس، اور تجزیہ کرنے والی ویب سائٹ">A device on the trunk, a website that analyzes</h2>
+    <p class="lead" data-en="NakhlaGuard is two parts working together. The device is the source of the readings: it listens to the trunk. The website analyzes what the device sends, shows the result and the 3D position, and alerts the farmer." data-ar="NakhlaGuard جزءان يعملان معًا. الجهاز هو مصدر القراءات: يُصغي إلى الجذع. والموقع يحلّل ما يرسله الجهاز، ويعرض النتيجة والموضع ثلاثي الأبعاد، ويُنبّه المزارع." data-ur="NakhlaGuard دو حصے ہیں جو مل کر کام کرتے ہیں۔ ڈیوائس ریڈنگز کا ذریعہ ہے: یہ تنے کی آواز سنتی ہے۔ ویب سائٹ ڈیوائس کے بھیجے ہوئے ڈیٹا کا تجزیہ کرتی ہے، نتیجہ اور تھری ڈی مقام دکھاتی ہے، اور کسان کو الرٹ کرتی ہے۔">NakhlaGuard is two parts working together. The device is the source of the readings: it listens to the trunk. The website analyzes what the device sends, shows the result and the 3D position, and alerts the farmer.</p>
+    <div class="flow">
+      <div class="flow-node dev"><div class="ic">🎙️</div><h3 data-en="Sensors on the trunk" data-ar="مستشعرات على الجذع" data-ur="تنے پر سینسر">Sensors on the trunk</h3><p data-en="3 contact sensors on a 40 × 80 cm panel" data-ar="ثلاثة مستشعرات ملامسة على لوح 40 × 80 سم" data-ur="40 × 80 سینٹی میٹر کے پینل پر 3 کانٹیکٹ سینسر">3 contact sensors on a 40 × 80 cm panel</p></div><div class="flow-arrow" aria-hidden="true"></div><div class="flow-node dev"><div class="ic">🔌</div><h3 data-en="Arduino Nano" data-ar="متحكم Arduino Nano" data-ur="Arduino Nano">Arduino Nano</h3><p data-en="Reads the 3 channels, 4,000 readings per second" data-ar="يقرأ القنوات الثلاث بمعدل 4000 قراءة في الثانية" data-ur="تینوں چینلز پڑھتا ہے، 4000 ریڈنگ فی سیکنڈ">Reads the 3 channels, 4,000 readings per second</p></div><div class="flow-arrow" aria-hidden="true"></div><div class="flow-node dev"><div class="ic">💻</div><h3 data-en="Bridge to the server" data-ar="جسر إلى الخادم" data-ur="سرور تک پل">Bridge to the server</h3><p data-en="A small program sends each reading to the website over USB" data-ar="برنامج صغير يرسل كل قراءة إلى الموقع عبر USB" data-ur="ایک چھوٹا پروگرام ہر ریڈنگ USB کے ذریعے ویب سائٹ کو بھیجتا ہے">A small program sends each reading to the website over USB</p></div><div class="flow-arrow" aria-hidden="true"></div><div class="flow-node"><div class="ic">🌴</div><h3 data-en="This website" data-ar="هذا الموقع" data-ur="یہ ویب سائٹ">This website</h3><p data-en="AI result, report, 3D position and alert" data-ar="نتيجة الذكاء الاصطناعي والتقرير والموضع ثلاثي الأبعاد والتنبيه" data-ur="مصنوعی ذہانت کا نتیجہ، رپورٹ، تھری ڈی مقام اور الرٹ">AI result, report, 3D position and alert</p></div>
+    </div>
+    <div class="compare">
+      <div class="col them"><h4 data-en="The device" data-ar="الجهاز" data-ur="ڈیوائس">The device</h4><ul>
+<li data-en="Listens to the trunk and records 5 seconds at 4,000 readings per second" data-ar="يُصغي إلى الجذع ويسجّل 5 ثوانٍ بمعدل 4000 قراءة في الثانية" data-ur="تنے کی آواز سنتی ہے اور 4000 ریڈنگ فی سیکنڈ پر 5 سیکنڈ ریکارڈ کرتی ہے">Listens to the trunk and records 5 seconds at 4,000 readings per second</li>
+<li data-en="Measures the level on each of the 3 channels, to estimate where the vibration comes from" data-ar="يقيس مستوى كل قناة من القنوات الثلاث لتقدير مصدر الاهتزاز" data-ur="تینوں چینلز میں سے ہر ایک کی سطح ناپتی ہے تاکہ کمپن کا ماخذ معلوم ہو">Measures the level on each of the 3 channels, to estimate where the vibration comes from</li>
+<li data-en="Sends everything to the website automatically, with no file to upload" data-ar="يرسل كل شيء إلى الموقع تلقائيًا، دون رفع أي ملف" data-ur="سب کچھ خود بخود ویب سائٹ کو بھیجتی ہے، کوئی فائل اپ لوڈ نہیں کرنی پڑتی">Sends everything to the website automatically, with no file to upload</li>
+      </ul></div>
+      <div class="col us"><h4 data-en="The website" data-ar="الموقع" data-ur="ویب سائٹ">The website</h4><ul>
+<li data-en="Classifies the sound into four stages: healthy, early, moderate, advanced" data-ar="يصنّف الصوت إلى أربع مراحل: سليمة ومبكرة ومتوسطة ومتقدمة" data-ur="آواز کو چار مراحل میں درجہ بند کرتی ہے: صحت مند، ابتدائی، درمیانہ، شدید">Classifies the sound into four stages: healthy, early, moderate, advanced</li>
+<li data-en="Writes the treatment report and keeps each palm's history" data-ar="يكتب تقرير العلاج ويحفظ سجل كل نخلة" data-ur="علاج کی رپورٹ لکھتی ہے اور ہر کھجور کی تاریخ محفوظ رکھتی ہے">Writes the treatment report and keeps each palm's history</li>
+<li data-en="Shows the position on the 3D trunk and alerts the farmer" data-ar="يعرض الموضع على الجذع ثلاثي الأبعاد ويُنبّه المزارع" data-ur="تنے پر تھری ڈی مقام دکھاتی ہے اور کسان کو الرٹ کرتی ہے">Shows the position on the 3D trunk and alerts the farmer</li>
+<li data-en="No device at hand? Upload a recording or try a ready sample" data-ar="لا جهاز بين يديك؟ ارفع تسجيلًا أو جرّب تسجيلًا جاهزًا" data-ur="ڈیوائس نہیں ہے؟ ریکارڈنگ اپ لوڈ کریں یا تیار نمونہ آزمائیں">No device at hand? Upload a recording or try a ready sample</li>
+      </ul></div>
+    </div>
+    <div class="dev-note"><span data-en="Prototype status: the device has not been tested on real infested palms yet, and the position estimate is not calibrated on real wood." data-ar="حالة النموذج: لم يُختبر الجهاز بعد على نخيل مصاب حقيقي، ولم تُعايَر تقديرات الموضع على خشب حقيقي." data-ur="ابتدائی نمونے کی حالت: ڈیوائس کو ابھی حقیقی متاثرہ کھجوروں پر نہیں آزمایا گیا، اور مقام کا تخمینہ حقیقی لکڑی پر کیلیبریٹ نہیں ہوا۔">Prototype status: the device has not been tested on real infested palms yet, and the position estimate is not calibrated on real wood.</span> <a href="/evidence.html" data-en="See &quot;Not claimed&quot; on the Evidence page" data-ar="انظر «لا نزعمه» في صفحة الأدلة" data-ur="ثبوت کے صفحے پر «ہم دعویٰ نہیں کرتے» دیکھیں">See &quot;Not claimed&quot; on the Evidence page</a></div>
+  </section>
+
+  <section id="farmers">
+    <div class="kicker" data-en="Farmers network" data-ar="شبكة المزارعين" data-ur="کسانوں کا نیٹ ورک">Farmers network</div>
+    <h2 data-en="Not in the area? Request a farmer to visit your palm" data-ar="لست في المنطقة؟ اطلب مزارعًا يزور نخلتك" data-ur="علاقے میں نہیں ہیں؟ اپنی کھجور کے لیے کسان بلائیں">Not in the area? Request a farmer to visit your palm</h2>
+    <p class="lead" data-en="When an alert reaches you while you are away from the farm, request a visit from a farmer or worker registered in your area. When one accepts, you get his name and number and talk directly. Farmers and workers can register to receive these requests." data-ar="حين يصلك تنبيه وأنت بعيد عن المزرعة، تطلب زيارة من مزارع أو عامل مسجّل في منطقتك. وإذا قبل أحدهم الطلب يظهر لك اسمه ورقمه فتتواصلان مباشرة. ويمكن للمزارعين والعمال أن يسجّلوا أنفسهم لاستقبال هذه الطلبات." data-ur="جب باغ سے دور ہونے کی حالت میں الرٹ پہنچے تو اپنے علاقے کے رجسٹرڈ کسان یا مزدور سے دورے کی درخواست کریں۔ کوئی قبول کر لے تو اس کا نام اور نمبر آپ کو مل جاتا ہے اور آپ براہِ راست بات کرتے ہیں۔ کسان اور مزدور یہ درخواستیں وصول کرنے کے لیے خود کو رجسٹر کر سکتے ہیں۔">When an alert reaches you while you are away from the farm, request a visit from a farmer or worker registered in your area. When one accepts, you get his name and number and talk directly. Farmers and workers can register to receive these requests.</p>
+    <div class="fm-box">
+      <div class="hcount" id="homeHelpers" role="status" aria-live="polite"><span id="hcT"></span><b id="hcN"></b></div>
+      <div class="hnote" data-en="Prototype: only people who registered themselves are counted, and we do not guarantee a helper in every area." data-ar="نموذج أولي: لا يُحسب إلا من سجّل نفسه فعلًا، ولا نضمن وجود مساعد في كل منطقة." data-ur="ابتدائی نمونہ: صرف وہی گنے جاتے ہیں جنہوں نے خود کو رجسٹر کیا، اور ہم ہر علاقے میں مددگار کی ضمانت نہیں دیتے۔">Prototype: only people who registered themselves are counted, and we do not guarantee a helper in every area.</div>
+      <div class="cta-row">
+        <a class="btn btn-fill" data-en="Request a farmer" data-ar="اطلب مزارعًا" data-ur="کسان کی درخواست کریں" href="/farmers.html">Request a farmer</a>
+        <a class="btn btn-line" data-en="Register as a helper" data-ar="سجّل نفسك مساعدًا" data-ur="خود کو مددگار رجسٹر کریں" href="/farmers.html?tab=help">Register as a helper</a>
+      </div>
     </div>
   </section>
 
   <section>
-    <div class="kicker">The solution</div>
-    <h2>A cheap sensor, a trained ear, an instant decision</h2>
-    <p class="lead">
-      NakhlaGuard listens to trunk vibration through a low-cost contact sensor,
-      and a machine learning model trained to recognize the acoustic signature of
-      larvae feeding inside the wood — long before the palm shows any outward sign.
-      The system classifies severity across four stages and sends an instant
-      treatment recommendation.
-    </p>
-  </section>
-
-  <section>
-    <div class="kicker">How it works</div>
-    <h2>From vibration to decision, in seconds</h2>
+    <div class="kicker" data-en="How it works" data-ar="كيف يعمل" data-ur="یہ کیسے کام کرتا ہے">How it works</div>
+    <h2 data-en="From vibration to decision, in seconds" data-ar="من الاهتزاز إلى القرار، خلال ثوانٍ" data-ur="کمپن سے فیصلے تک، چند سیکنڈ میں">From vibration to decision, in seconds</h2>
     <div class="steps">
-      <div class="step"><div class="ghost-num">01</div><div><h3>Listen</h3><p>A low-cost sound sensor is mounted on the trunk, wired to a microcontroller.</p></div></div>
-      <div class="step"><div class="ghost-num">02</div><div><h3>Analyze</h3><p>An AI model reads the frequency pattern and classifies the palm: healthy, early, moderate, or advanced infestation.</p></div></div>
-      <div class="step"><div class="ghost-num">03</div><div><h3>Decide</h3><p>An instant treatment recommendation, with an estimated cost-of-inaction versus cost-of-treatment.</p></div></div>
-      <div class="step"><div class="ghost-num">04</div><div><h3>Alert</h3><p>A real-time notification reaches the farmer the moment a reading crosses a risk threshold.</p></div></div>
+      <div class="step"><div class="ghost-num">01</div><div><h3 data-en="Listen" data-ar="استماع" data-ur="سننا">Listen</h3><p data-en="A contact sound sensor is mounted on the trunk and wired to a microcontroller (the device)." data-ar="يُثبَّت على الجذع مستشعر صوتي ملامس متصل بمتحكم دقيق، وهذا هو الجهاز." data-ur="تنے پر کانٹیکٹ آواز کا سینسر لگایا جاتا ہے جو مائیکرو کنٹرولر سے جڑا ہوتا ہے، یہی ڈیوائس ہے۔">A contact sound sensor is mounted on the trunk and wired to a microcontroller (the device).</p></div></div>
+      <div class="step"><div class="ghost-num">02</div><div><h3 data-en="Analyze" data-ar="تحليل" data-ur="تجزیہ">Analyze</h3><p data-en="An AI model reads the frequency pattern and classifies the palm: healthy, early, moderate, or advanced infestation." data-ar="نموذج ذكاء اصطناعي يقرأ نمط الترددات ويصنّف النخلة: سليمة، إصابة مبكرة، متوسطة، أو متقدمة." data-ur="مصنوعی ذہانت کا ماڈل فریکوئنسی کا انداز پڑھتا ہے اور کھجور کی درجہ بندی کرتا ہے: صحت مند، ابتدائی، درمیانی یا شدید حملہ۔">An AI model reads the frequency pattern and classifies the palm: healthy, early, moderate, or advanced infestation.</p></div></div>
+      <div class="step"><div class="ghost-num">03</div><div><h3 data-en="Decide" data-ar="قرار" data-ur="فیصلہ">Decide</h3><p data-en="An instant treatment recommendation, with an estimated cost-of-inaction versus cost-of-treatment." data-ar="توصية علاج فورية، مع تقدير لتكلفة التأخير مقابل تكلفة العلاج." data-ur="علاج کی فوری تجویز، ساتھ میں تاخیر کی لاگت اور علاج کی لاگت کا اندازہ۔">An instant treatment recommendation, with an estimated cost-of-inaction versus cost-of-treatment.</p></div></div>
+      <div class="step"><div class="ghost-num">04</div><div><h3 data-en="Alert" data-ar="تنبيه" data-ur="الرٹ">Alert</h3><p data-en="A real-time notification reaches the farmer the moment a reading crosses a risk threshold." data-ar="يصل إشعار فوري إلى المزارع بمجرد أن تتجاوز القراءة حدّ الخطورة." data-ur="جیسے ہی کوئی ریڈنگ خطرے کی حد عبور کرتی ہے، کسان کو فوری اطلاع پہنچ جاتی ہے۔">A real-time notification reaches the farmer the moment a reading crosses a risk threshold.</p></div></div>
     </div>
   </section>
 
   <section>
-    <div class="kicker">Agentic AI</div>
-    <h2>Ask it anything about your farm — it looks up the real data itself</h2>
-    <p class="lead">
+    <div class="kicker" data-en="Agentic AI" data-ar="ذكاء اصطناعي توكيلي" data-ur="ایجنٹک مصنوعی ذہانت">Agentic AI</div>
+    <h2 data-en="Ask it anything about your farm — it looks up the real data itself" data-ar="اسأله أي سؤال عن مزرعتك؛ فهو يبحث عن البيانات الحقيقية بنفسه" data-ur="اپنے فارم کے بارے میں کچھ بھی پوچھیں — یہ خود اصل ڈیٹا تلاش کرتا ہے">Ask it anything about your farm — it looks up the real data itself</h2>
+    <p class="lead" data-en="The Farm Assistant isn't a single canned prompt. It's given real tools — it can query your palm registry, pull one palm's full check history, or list every palm that currently needs attention — and decides on its own, question by question, which tool (if any) to call before answering." data-ar="مساعد المزرعة ليس مجرد سؤال وجواب ثابت، بل يملك أدوات حقيقية — يستطيع الاستعلام عن سجل النخيل، أو استرجاع تاريخ الفحص الكامل لنخلة معينة، أو سرد كل نخلة تحتاج إلى عناية الآن — ويقرر بنفسه، مع كل سؤال، أي أداة (إن احتاج) يستخدمها قبل الإجابة." data-ur="فارم اسسٹنٹ کوئی ایک رٹا رٹایا جواب نہیں دیتا۔ اسے حقیقی ٹولز دیے گئے ہیں — یہ آپ کی کھجوروں کا ریکارڈ دیکھ سکتا ہے، کسی ایک کھجور کی مکمل جانچ کی تاریخ نکال سکتا ہے، یا ان تمام کھجوروں کی فہرست بنا سکتا ہے جنہیں اس وقت توجہ درکار ہے — اور ہر سوال پر خود فیصلہ کرتا ہے کہ جواب دینے سے پہلے کون سا ٹول (اگر کوئی ہو) استعمال کرنا ہے۔">
       The Farm Assistant isn't a single canned prompt. It's given real tools —
       it can query your palm registry, pull one palm's full check history, or
       list every palm that currently needs attention — and decides on its own,
@@ -190,39 +361,81 @@
   </section>
 
   <section>
-    <div class="kicker">Why it's different</div>
-    <h2>Built for the field, not the lab</h2>
-    <div class="compare">
-      <div class="col them">
-        <h4>Published research</h4>
-        <ul>
-          <li>Distributed fiber-optic sensing — expensive, specialist install</li>
-          <li>Binary output: infested or not</li>
-          <li>Stops at classification</li>
-        </ul>
-      </div>
-      <div class="col us">
-        <h4>NakhlaGuard</h4>
-        <ul>
-          <li>Low-cost contact sensor + microcontroller, self-installed</li>
-          <li>Four severity stages, not two</li>
-          <li>Treatment plan + economic estimate + live alert</li>
-        </ul>
+    <div class="kicker" data-en="Why it's different" data-ar="ما الذي يميزنا" data-ur="ہم کیسے مختلف ہیں">Why it's different</div>
+    <h2 data-en="Built for the field, not the lab" data-ar="مصمَّم للمزرعة، لا للمختبر" data-ur="کھیت کے لیے بنایا گیا، تجربہ گاہ کے لیے نہیں">Built for the field, not the lab</h2>
+    <div class="cmp-wrap"><table class="cmp-table">
+      <thead><tr>
+        <th data-en="Aspect" data-ar="الجانب" data-ur="پہلو">Aspect</th>
+        <th data-en="Published research (KAUST fiber-optic DAS)" data-ar="الأبحاث المنشورة (نظام كاوست بالألياف الضوئية)" data-ur="شائع شدہ تحقیق (KAUST فائبر آپٹک DAS)">Published research (KAUST fiber-optic DAS)</th>
+        <th class="us">NakhlaGuard</th>
+      </tr></thead>
+      <tbody>
+        <tr><td data-en="Sensing hardware" data-ar="عتاد الاستشعار" data-ur="سینسنگ ہارڈویئر">Sensing hardware</td>
+            <td data-en="Fiber-optic cable + optical interrogator unit" data-ar="كابل ألياف ضوئية + جهاز قراءة ضوئي (Interrogator)" data-ur="فائبر آپٹک کیبل + آپٹیکل انٹیروگیٹر یونٹ">Fiber-optic cable + optical interrogator unit</td>
+            <td class="us" data-en="Contact sound sensor + microcontroller per palm" data-ar="مستشعر صوتي ملامس + متحكم دقيق لكل نخلة" data-ur="ہر کھجور کے لیے کانٹیکٹ آواز کا سینسر + مائیکرو کنٹرولر">Contact sound sensor + microcontroller per palm</td></tr>
+        <tr><td data-en="Installation" data-ar="التركيب" data-ur="تنصیب">Installation</td>
+            <td data-en="Specialist installation" data-ar="تركيب متخصص" data-ur="ماہر کے ذریعے تنصیب">Specialist installation</td>
+            <td class="us" data-en="Self-installed by the farmer" data-ar="يركّبه المزارع بنفسه" data-ur="کسان خود لگا لیتا ہے">Self-installed by the farmer</td></tr>
+        <tr><td data-en="Best suited for" data-ar="الأنسب لـ" data-ur="کس کے لیے موزوں ہے">Best suited for</td>
+            <td data-en="Large plantations (one interrogator serves many trees)" data-ar="المزارع الكبيرة (جهاز قراءة واحد يخدم أشجارًا كثيرة)" data-ur="بڑے باغات (ایک انٹیروگیٹر بہت سے درختوں کو سنبھالتا ہے)">Large plantations (one interrogator serves many trees)</td>
+            <td class="us" data-en="Small and medium farms, palm by palm" data-ar="المزارع الصغيرة والمتوسطة، نخلة بنخلة" data-ur="چھوٹے اور درمیانے فارم، ایک ایک کھجور کے حساب سے">Small and medium farms, palm by palm</td></tr>
+        <tr><td data-en="Output" data-ar="المخرجات" data-ur="نتیجہ">Output</td>
+            <td data-en="Infested vs. healthy classification" data-ar="تصنيف: مصابة أو سليمة" data-ur="درجہ بندی: متاثرہ یا صحت مند">Infested vs. healthy classification</td>
+            <td class="us" data-en="Four severity stages" data-ar="أربع مراحل للشدة" data-ur="شدت کے چار مراحل">Four severity stages</td></tr>
+        <tr><td data-en="After detection" data-ar="بعد الكشف" data-ur="شناخت کے بعد">After detection</td>
+            <td data-en="Detection alert" data-ar="تنبيه بوجود الإصابة" data-ur="حملے کی موجودگی کا الرٹ">Detection alert</td>
+            <td class="us" data-en="Weekly treatment plan, harvest-impact estimate, live alert" data-ar="خطة علاج أسبوعية، تقدير أثر الإصابة على المحصول، تنبيه فوري" data-ur="ہفتہ وار علاج کا منصوبہ، فصل پر اثر کا تخمینہ، فوری الرٹ">Weekly treatment plan, harvest-impact estimate, live alert</td></tr>
+        <tr><td data-en="Farm tools" data-ar="أدوات المزرعة" data-ur="فارم کے ٹولز">Farm tools</td>
+            <td>—</td>
+            <td class="us" data-en="Palm registry (GPS + age), AI assistant, alert dashboard" data-ar="سجل النخيل (الموقع والعمر)، مساعد ذكي، لوحة إشعارات" data-ur="کھجوروں کا ریکارڈ (GPS + عمر)، AI اسسٹنٹ، الرٹس کا ڈیش بورڈ">Palm registry (GPS + age), AI assistant, alert dashboard</td></tr>
+        <tr><td data-en="Field validation" data-ar="الاختبار الميداني" data-ur="میدانی تصدیق">Field validation</td>
+            <td data-en="Tested in published experiments: a closed room, then an outdoor farm of 19 trees (2 artificially infested)" data-ar="اختُبر في تجارب منشورة: غرفة مغلقة ثم مزرعة مفتوحة فيها 19 شجرة (2 مصابتان صناعيًا)" data-ur="شائع شدہ تجربات میں جانچا گیا: بند کمرہ، پھر 19 درختوں کا کھلا فارم (2 مصنوعی طور پر متاثرہ)">Tested in published experiments: a closed room, then an outdoor farm of 19 trees (2 artificially infested)</td>
+            <td class="us" data-en="Prototype trained on simulated data; not yet field-validated" data-ar="نموذج أولي مدرَّب على بيانات محاكاة؛ لم يُختبر ميدانيًا بعد" data-ur="ابتدائی نمونہ، مصنوعی (سمولیٹڈ) ڈیٹا پر تربیت یافتہ؛ ابھی میدان میں تصدیق شدہ نہیں">Prototype trained on simulated data; not yet field-validated</td></tr>
+      </tbody></table></div>
+    <p class="cmp-note" data-en="Based on published KAUST research (Scientific Reports 2020; Sensors 2022), see the Evidence page, R6 and R20. Commercial products may offer overlapping features." data-ar="استنادًا إلى أبحاث منشورة لجامعة الملك عبدالله للعلوم والتقنية (Scientific Reports 2020؛ Sensors 2022)، انظر صفحة الأدلة: R6 وR20. وقد تقدّم منتجات تجارية ميزات متقاطعة." data-ur="KAUST کی شائع شدہ تحقیق (Scientific Reports 2020؛ Sensors 2022) پر مبنی، دیکھیں ثبوت کا صفحہ: R6 اور R20۔ تجارتی مصنوعات میں ملتی جلتی خصوصیات ہو سکتی ہیں۔">Based on published KAUST research (Scientific Reports 2020; Sensors 2022), see the Evidence page, R6 and R20. Commercial products may offer overlapping features.</p>
+  </section>
+
+  <section>
+    <div class="kicker" data-en="Roadmap" data-ar="خارطة التطوير" data-ur="ترقیاتی روڈ میپ">Roadmap</div>
+    <h2 data-en="Next: thermal + acoustic fusion" data-ar="القادم: دمج التصوير الحراري مع الصوت" data-ur="آگے: حرارتی اور صوتی ڈیٹا کا امتزاج">Next: thermal + acoustic fusion</h2>
+    <div class="roadmap">
+      <div class="rm-card"><h3 data-en="1. Thermal pre-screening" data-ar="1. المسح الحراري الأولي" data-ur="1. ابتدائی حرارتی اسکریننگ">1. Thermal pre-screening</h3>
+        <p data-en="A thermal camera scans the trunk for abnormal heat that fermentation and larval activity can cause. Flagged spots move to the next step." data-ar="كاميرا حرارية تفحص الجذع بحثًا عن حرارة غير طبيعية قد تنتج عن التخمّر ونشاط اليرقات، وتنتقل المواضع المشتبه بها للخطوة التالية." data-ur="تھرمل کیمرا تنے میں غیر معمولی حرارت تلاش کرتا ہے جو خمیر اٹھنے اور لاروے کی سرگرمی سے پیدا ہو سکتی ہے۔ نشان زد مقامات اگلے مرحلے میں جاتے ہیں۔">A thermal camera scans the trunk for abnormal heat that fermentation and larval activity can cause. Flagged spots move to the next step.</p></div>
+      <div class="rm-card"><h3 data-en="2. Acoustic confirmation" data-ar="2. التأكيد الصوتي الموضعي" data-ur="2. صوتی تصدیق">2. Acoustic confirmation</h3>
+        <p data-en="The contact sound sensor listens at the flagged spot for larval feeding sounds, helping rule out false thermal alarms such as sun-heated bark." data-ar="يستمع المستشعر الصوتي عند الموضع المشتبه به لأصوات تغذّي اليرقات، مما يساعد على استبعاد الإنذارات الحرارية الكاذبة مثل تسخين الشمس للحاء." data-ur="کانٹیکٹ آواز کا سینسر نشان زد مقام پر لاروے کے کھانے کی آوازیں سنتا ہے، جس سے دھوپ سے گرم چھال جیسے جھوٹے حرارتی الرٹس کو خارج کرنے میں مدد ملتی ہے۔">The contact sound sensor listens at the flagged spot for larval feeding sounds, helping rule out false thermal alarms such as sun-heated bark.</p></div>
+      <div class="rm-card"><h3 data-en="3. Cross-data matching" data-ar="3. مطابقة البيانات المتقاطعة" data-ur="3. ڈیٹا کا باہمی موازنہ">3. Cross-data matching</h3>
+        <p data-en="An algorithm compares both signals. When a heat anomaly and a larval acoustic signature agree, the infestation is marked as confirmed." data-ar="خوارزمية تقارن الإشارتين، وعند توافق شذوذ حراري مع بصمة صوتية لنخر اليرقات تُصنَّف الإصابة مؤكَّدة." data-ur="ایک الگورتھم دونوں اشاروں کا موازنہ کرتا ہے۔ جب حرارتی بے ضابطگی اور لاروے کی صوتی پہچان ایک دوسرے سے میل کھائیں تو حملے کو تصدیق شدہ قرار دیا جاتا ہے۔">An algorithm compares both signals. When a heat anomaly and a larval acoustic signature agree, the infestation is marked as confirmed.</p></div>
+      <div class="rm-card"><h3 data-en="4. Locating the larvae" data-ar="4. تحديد موضع اليرقات" data-ur="4. لاروے کا مقام معلوم کرنا">4. Locating the larvae</h3>
+        <p data-en="Research direction: 3–4 microphones around the flagged area and time-difference-of-arrival (TDOA) analysis to estimate where the sound originates inside the trunk." data-ar="اتجاه بحثي: مصفوفة من 3 إلى 4 ميكروفونات حول المنطقة المشتبه بها، وتحليل فرق زمن وصول الصوت (TDOA) لتقدير مصدره داخل الجذع." data-ur="تحقیقی سمت: نشان زد علاقے کے گرد 3 سے 4 مائیکروفون اور وقت کے فرق (TDOA) کا تجزیہ، تاکہ اندازہ لگایا جا سکے کہ آواز تنے کے اندر کہاں سے آ رہی ہے۔">Research direction: 3–4 microphones around the flagged area and time-difference-of-arrival (TDOA) analysis to estimate where the sound originates inside the trunk.</p></div>
+      <div class="rm-card"><h3 data-en="5. Thermal-acoustic farm map" data-ar="5. خريطة المزرعة الحرارية الصوتية" data-ur="5. حرارتی و صوتی فارم کا نقشہ">5. Thermal-acoustic farm map</h3>
+        <p data-en="Each palm keeps a thermal and acoustic history on the dashboard, helping follow how infestation may spread between neighboring trees." data-ar="تحتفظ كل نخلة بسجل حراري وصوتي في لوحة التحكم، مما يساعد على متابعة احتمال انتشار الإصابة بين الأشجار المجاورة." data-ur="ہر کھجور کی حرارتی اور صوتی تاریخ ڈیش بورڈ پر محفوظ رہتی ہے، جس سے یہ دیکھنے میں مدد ملتی ہے کہ حملہ ہمسایہ درختوں میں کیسے پھیل سکتا ہے۔">Each palm keeps a thermal and acoustic history on the dashboard, helping follow how infestation may spread between neighboring trees.</p></div>
+      <div class="rm-card"><h3 data-en="6. Targeted treatment (long-term idea)" data-ar="6. علاج موجَّه (فكرة بعيدة المدى)" data-ur="6. ہدف شدہ علاج (طویل مدتی خیال)">6. Targeted treatment (long-term idea)</h3>
+        <p data-en="Using the estimated location to guide localized treatment instead of treating the whole palm. This would need extensive field validation." data-ar="استخدام الموضع المقدَّر لتوجيه علاج موضعي بدل معالجة النخلة كاملة، وهذا يحتاج اختبارًا ميدانيًا موسّعًا." data-ur="پوری کھجور کا علاج کرنے کے بجائے اندازے سے معلوم شدہ مقام کی مدد سے مقامی علاج کی رہنمائی۔ اس کے لیے وسیع میدانی تصدیق درکار ہوگی۔">Using the estimated location to guide localized treatment instead of treating the whole palm. This would need extensive field validation.</p></div>
+    </div>
+    <p class="rm-note" data-en="Planned research directions — not part of the current prototype and not yet validated." data-ar="اتجاهات بحثية مخطَّط لها — ليست جزءًا من النموذج الأولي الحالي ولم يُتحقق منها بعد." data-ur="منصوبہ بند تحقیقی سمتیں — موجودہ ابتدائی نمونے کا حصہ نہیں اور ابھی تصدیق شدہ نہیں۔">Planned research directions — not part of the current prototype and not yet validated.</p>
+  </section>
+
+  <section>
+    <div class="mobile-teaser">
+      <div class="mobile-teaser-icon">📱</div>
+      <div>
+        <div class="mobile-teaser-title" data-en="Mobile app — coming soon" data-ar="تطبيق للهاتف المحمول — قريبًا" data-ur="موبائل ایپ — جلد آ رہی ہے">Mobile app — coming soon</div>
+        <div class="mobile-teaser-sub" data-en="A dedicated iOS &amp; Android app with push alerts, camera capture, and offline mode is the next step for NakhlaGuard." data-ar="تطبيق للهاتف المحمول مخصص لنظامي iOS وAndroid، بإشعارات فورية والتقاط بالكاميرا ووضع بلا اتصال، هو الخطوة التالية لـNakhlaGuard." data-ur="iOS اور Android کے لیے ایک مخصوص ایپ، جس میں فوری الرٹس، کیمرے سے تصویر لینے اور آف لائن موڈ کی سہولت ہوگی، NakhlaGuard کا اگلا قدم ہے۔">A dedicated iOS &amp; Android app with push alerts, camera capture, and offline mode is the next step for NakhlaGuard.</div>
       </div>
     </div>
   </section>
 
   <section>
     <div class="final">
-      <h2>See it detect an infestation live</h2>
-      <p>Upload a trunk recording and watch the model classify it in real time.</p>
-      <a href="/test.html" class="btn btn-fill">Start the demo</a>
+      <h2 data-en="See it detect an infestation live" data-ar="شاهد كشف الإصابة مباشرة" data-ur="کیڑے کے حملے کی شناخت براہِ راست دیکھیں">See it detect an infestation live</h2>
+      <p data-en="Upload a trunk recording and watch the model classify it in real time." data-ar="ارفع تسجيلًا صوتيًا للجذع وشاهد النموذج يصنّفه فورًا." data-ur="تنے کی ریکارڈنگ اپ لوڈ کریں اور ماڈل کو اسی وقت درجہ بندی کرتے دیکھیں۔">Upload a trunk recording and watch the model classify it in real time.</p>
+      <a href="/test.html" class="btn btn-fill" data-en="Start the demo" data-ar="ابدأ التجربة" data-ur="تجربہ شروع کریں">Start the demo</a>
     </div>
   </section>
 
 </div>
 
-<footer>NakhlaGuard — built for SAIF 2026, Marine, Agricultural &amp; Food Technologies track</footer>
+<footer data-en="NakhlaGuard — early detection of Red Palm Weevil in date palms" data-ar="NakhlaGuard — كشف مبكر لسوسة النخيل الحمراء في النخيل" data-ur="NakhlaGuard — کھجور کے درختوں میں ریڈ پام ویول کی بروقت شناخت">NakhlaGuard — early detection of Red Palm Weevil in date palms</footer>
 
 <script>
   const bars = document.getElementById('waveBars');
@@ -233,7 +446,53 @@
     bar.style.animationDelay = (i * 0.08) + 's';
     bars.appendChild(bar);
   });
+
+// ---------- تبديل اللغة (عربي / English / اردو) - مشترك عبر كل صفحات الموقع ----------
+var LANG_CYCLE = ['ar', 'en', 'ur'];
+var LANG_BTN_LABEL = { ar: 'English', en: 'اردو', ur: 'العربية' };
+var LOCALES = { ar: 'ar-SA', en: 'en-US', ur: 'ur-PK' };
+function getLang(){ let l = null; try{ l = localStorage.getItem('nakhlaguard-lang'); }catch(e){} return (l === 'ar' || l === 'en' || l === 'ur') ? l : 'ar'; }   // لا يعتمد على ثوابت معرَّفة لاحقًا، لأن بعض الصفحات تناديه قبل نهاية السكربت
+function setLang(lang){
+  if(!LANG_CYCLE.includes(lang)) lang = 'ar';
+  try{ localStorage.setItem('nakhlaguard-lang', lang); }catch(e){}
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
+  document.body.classList.toggle('rtl', lang !== 'en');
+  document.body.classList.toggle('lang-ur', lang === 'ur');
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.innerHTML = el.getAttribute('data-' + lang) ?? el.getAttribute('data-en');
+  });
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    el.placeholder = el.getAttribute('data-' + lang + '-ph') ?? el.getAttribute('data-en-ph');
+  });
+  const btn = document.getElementById('langToggle');
+  if(btn) btn.textContent = LANG_BTN_LABEL[lang];
+}
+function toggleLang(){ setLang(LANG_CYCLE[(LANG_CYCLE.indexOf(getLang()) + 1) % LANG_CYCLE.length]); }
+setLang(getLang());
+
+// عدّاد المساعدين: رقم حقيقي من الخادم (يبدأ من صفر). إن تعذّر الاتصال يُخفى سطر العدّاد ولا يُعرض أي رقم.
+(function(){
+  var TX = {
+    ar: { l: 'المساعدون المسجّلون حاليًا: ', z: 'لا يوجد مساعدون مسجّلون بعد. كن أول من يسجّل في منطقتك.' },
+    en: { l: 'Registered helpers right now: ', z: 'No helpers have registered yet. Be the first in your area.' },
+    ur: { l: 'اس وقت رجسٹرڈ مددگار: ', z: 'ابھی کسی مددگار نے رجسٹر نہیں کیا۔ اپنے علاقے میں پہلے بنیں۔' }
+  };
+  var n = null, box = document.getElementById('homeHelpers');
+  function draw(){
+    if(!box) return;
+    var l = document.documentElement.lang; l = (l === 'ar' || l === 'ur') ? l : 'en';
+    var hide = (n === null);
+    box.style.display = hide ? 'none' : '';
+    document.getElementById('hcT').textContent = n === 0 ? TX[l].z : TX[l].l;
+    document.getElementById('hcN').textContent = n === 0 ? '' : n;
+  }
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  fetch('/helpers/count').then(function(r){ return r.json(); }).then(function(j){ n = (j && typeof j.count === 'number') ? j.count : null; draw(); }).catch(function(){ n = null; draw(); });
+  draw();
+})();
 </script>
 
+<script src="/nav.js" defer></script>
 </body>
 </html>

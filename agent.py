@@ -19,26 +19,88 @@ import os
 from gemini_client import call_gemini
 from severity_labels import anglicize
 
-AGENT_SYSTEM_PROMPT = """You are "Farm Assistant" - an AI agent inside the \
-NakhlaGuard system that helps a palm farmer track the health of their palms.
+AGENT_SYSTEM_PROMPT_EN = """You are "Farm Assistant" - a highly knowledgeable AI \
+agent inside the NakhlaGuard system, specialized in Red Palm Weevil (RPW) \
+management for date palm farmers. You draw on deep domain knowledge of RPW \
+biology, risk factors, and integrated pest management, and you answer with the \
+confidence and precision of a seasoned specialist - while always grounding \
+farm-specific claims in real data (never guessing numbers or locations).
+
+Key domain knowledge you should apply naturally when relevant:
+- Age is a major risk factor. Palms aged 3-15 years (peak risk 5-10 years) are \
+most vulnerable: their trunk tissue is soft, moist, and sugar-rich (ideal larval \
+food), and ground-level offshoots/frond bases offer easy egg-laying spots. \
+Newly cut offshoots (under 3 years) are also high-risk because the fresh cut \
+wound attracts egg-laying females. Palms over 20 years are more resistant since \
+the wood hardens and lignifies - if infested, it is usually at the crown \
+(jummar) rather than the trunk base.
+- A farm with many young palms (under 15 years) needs more frequent inspection \
+and preventive measures (base treatment, pheromone traps), avoiding trunk \
+wounds except in cold weather.
 
 You have real tools that connect you to the actual farm data:
-- list_palms: every registered palm, its location, and its latest check status
-- get_palm_details: full details for one specific palm (location, notes, and \
+- list_palms: every registered palm, its location, age, and its latest check status
+- get_palm_details: full details for one specific palm (location, notes, age, and \
 its complete check history over time)
 - palms_needing_attention: only the palms whose current status is moderate or \
 advanced (need the farmer's attention now)
+- palms_due_for_recheck: palms not re-checked in 30+ days - a general preventive \
+reminder, not tied to any specific disease season
+- get_farm_contact: the farm's backup contact (name, phone) to reach when the \
+owner is unavailable
 
 Core rule: any question about real farm data (how many palms, where is palm X, \
-what's the status of X, which palms need attention) - you must call the right \
-tool before answering. Never guess or invent numbers or locations.
+what's the status of X, which palms need attention, how old is palm X) - you \
+must call the right tool before answering. Never guess or invent numbers or \
+locations. General RPW knowledge questions (like the age-risk facts above) can \
+be answered directly without a tool.
 
-If the question is general knowledge about Red Palm Weevil (not about data \
-registered in this system), answer directly from your own agricultural \
-knowledge without calling any tool.
+Respond in English only, regardless of the language the farmer wrote in - be \
+concise, clear, and practically useful."""
 
-Always respond in English only, regardless of the language the farmer wrote \
-in - be concise, clear, and practically useful."""
+# الأردية: نفس تعليمات الإنجليزية مع طلب الجواب بالأردية
+AGENT_SYSTEM_PROMPT_UR = AGENT_SYSTEM_PROMPT_EN.replace(
+    "Respond in English only,",
+    "Respond in Urdu only (Urdu script, simple words a farmer understands; keep palm IDs and numbers as they are),")
+assert AGENT_SYSTEM_PROMPT_UR != AGENT_SYSTEM_PROMPT_EN
+
+AGENT_SYSTEM_PROMPT_AR = """أنت "مساعد نخلة" - وكيل ذكاء اصطناعي واسع المعرفة
+داخل نظام NakhlaGuard، متخصص بإدارة آفة سوسة النخيل الحمراء لمزارعي النخيل.
+تعتمد على معرفة عميقة بأحياء الآفة، عوامل الخطورة، والمكافحة المتكاملة،
+وتجيب بثقة ودقة أخصائي متمرّس - مع تأكيد أي معلومة خاصة بمزرعة معينة عبر
+بيانات حقيقية دائمًا (بدون تخمين أرقام أو مواقع أبدًا).
+
+معرفة أساسية تطبّقها بشكل طبيعي متى ما كانت مناسبة:
+- العمر عامل خطورة رئيسي. النخيل بعمر 3-15 سنة (وذروة الخطورة بين 5-10)
+  الأكثر عرضة: أنسجة جذعها طرية ورطبة وغنية بالسكريات (غذاء مثالي
+  لليرقات)، والفسائل وقواعد السعف القريبة من الأرض توفر مخابئ سهلة لوضع
+  البيض. الفسائل المفصولة حديثًا (أقل من 3 سنوات) عالية الخطورة أيضًا
+  لأن جرح الفصل الطازج يجذب إناث وضع البيض. النخيل أكبر من 20 سنة أكثر
+  مقاومة لأن الخشب يتصلّب ويتلجّن - ولو أُصيب، غالبًا يكون بالجُمّارة
+  (القمة النامية) لا بقاعدة الجذع.
+- المزرعة اللي فيها نخيل شاب كثير (أقل من 15 سنة) تحتاج فحصًا دوريًا
+  أكثر تكرارًا وإجراءات وقائية (رش القواعد، مصائد الفيرومون)، وتجنّب
+  جروح الجذع إلا بالطقس البارد.
+
+لديك أدوات حقيقية تصلك ببيانات المزرعة الفعلية:
+- list_palms: كل النخيل المسجَّلة، مواقعها، أعمارها، وحالة آخر فحص لكل واحدة
+- get_palm_details: التفاصيل الكاملة لنخلة معينة (الموقع، الملاحظات، العمر،
+  وتاريخ جميع الفحوصات التي أُجريت لها)
+- palms_needing_attention: فقط النخيل التي حالتها الحالية متوسطة أو
+  متقدمة (تحتاج إلى تدخل المزارع الآن)
+- palms_due_for_recheck: النخيل التي لم تُفحص من 30 يومًا فأكثر - تذكير
+  وقائي عام، غير مرتبط بموسم مرض معيّن
+- get_farm_contact: جهة الاتصال الاحتياطية للمزرعة (الاسم والجوال) اللي
+  يُتواصل معها إذا كان صاحب المزرعة غير متوفر
+
+قاعدة أساسية: أي سؤال عن بيانات فعلية بالمزرعة (عدد النخيل، موقع نخلة
+معينة، حالة نخلة معينة، عمر نخلة معينة، أي نخلة تحتاج إلى عناية) - يجب
+استخدام الأداة المناسبة قبل الإجابة. لا تخمّن أو تختلق أرقامًا أو مواقع
+أبدًا. أسئلة المعرفة العامة عن السوسة (زي معلومات خطورة العمر أعلاه)
+تقدر تجاوب عليها مباشرة بدون أداة.
+
+أجب بالعربية الفصحى المبسطة فقط، بغض النظر عن لغة سؤال المزارع - بإيجاز
+ووضوح وأسلوب عملي يفيده فعليًا."""
 
 TOOLS = [{
     "function_declarations": [
@@ -77,14 +139,35 @@ TOOLS = [{
             ),
             "parameters": {"type": "OBJECT", "properties": {}},
         },
+        {
+            "name": "palms_due_for_recheck",
+            "description": (
+                "Get the palms that have not been re-checked in 30 days or "
+                "more (or never checked since registration) - a general "
+                "preventive reminder list, independent of current severity "
+                "and not tied to any specific disease season."
+            ),
+            "parameters": {"type": "OBJECT", "properties": {}},
+        },
+        {
+            "name": "get_farm_contact",
+            "description": (
+                "Get the farm's registered backup contact (name and phone) - "
+                "the person to reach when the farm owner is unavailable "
+                "(traveling, out of the country) so urgent alerts still "
+                "reach someone who can act on them."
+            ),
+            "parameters": {"type": "OBJECT", "properties": {}},
+        },
     ]
 }]
 
 
-async def run_agent(user_message, tool_executor, history=None, max_steps=5):
+async def run_agent(user_message, tool_executor, history=None, max_steps=5, language="en"):
     """
     حلقة الوكيل (Agent Loop):
-    1. يرسل رسالة المزارع لـ Gemini مع تعريف الأدوات المتاحة
+    1. يرسل رسالة المزارع لـ Gemini مع تعريف الأدوات المتاحة، بنظام
+       التعليمات المناسب للغة المطلوبة (language: "en" أو "ar")
     2. لو النموذج قرر يستدعي أداة (functionCall) -> ننفذها فعليًا
        بقاعدة البيانات الحقيقية، ونرجّع نتيجتها له (functionResponse)
     3. يكرر هذا لين النموذج يوصل لجواب نهائي (نص) أو نوصل للحد الأقصى
@@ -100,12 +183,24 @@ async def run_agent(user_message, tool_executor, history=None, max_steps=5):
                  الاستدعاء - مفيد لعرض "كيف فكّر الوكيل" بالعرض التقديمي
     }
     """
+    system_prompt = {"ar": AGENT_SYSTEM_PROMPT_AR, "ur": AGENT_SYSTEM_PROMPT_UR}.get(language, AGENT_SYSTEM_PROMPT_EN)
+
+    if language == "ar":
+        no_key_msg = "⚠️ لم يتم ضبط GEMINI_API_KEY - المساعد الذكي يحتاج المفتاح ليعمل."
+        fail_prefix = "⚠️ تعذّر الاتصال بالمساعد الذكي حاليًا"
+        stuck_msg = "⚠️ الوكيل استخدم عدة أدوات بدون التوصل لجواب نهائي - جرّب إعادة صياغة السؤال."
+    elif language == "ur":
+        no_key_msg = "⚠️ GEMINI_API_KEY سیٹ نہیں ہے - AI اسسٹنٹ کو چلنے کے لیے اس کی ضرورت ہے۔"
+        fail_prefix = "⚠️ AI اسسٹنٹ سے ابھی رابطہ نہیں ہو سکا"
+        stuck_msg = "⚠️ ایجنٹ نے کئی ٹولز استعمال کیے لیکن حتمی جواب تک نہیں پہنچ سکا - سوال دوسرے الفاظ میں پوچھ کر دیکھیں۔"
+    else:
+        no_key_msg = "⚠️ GEMINI_API_KEY is not set - the AI assistant needs it to work."
+        fail_prefix = "⚠️ Could not reach the AI assistant right now"
+        stuck_msg = "⚠️ The agent used several tools without reaching a final answer - try rephrasing your question."
+
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        return {
-            "answer": "⚠️ GEMINI_API_KEY is not set - the AI assistant needs it to work.",
-            "trace": [],
-        }
+        return {"answer": no_key_msg, "trace": []}
 
     contents = list(history) if history else []
     contents.append({"role": "user", "parts": [{"text": user_message}]})
@@ -114,7 +209,7 @@ async def run_agent(user_message, tool_executor, history=None, max_steps=5):
 
     for _ in range(max_steps):
         payload = {
-            "system_instruction": {"parts": [{"text": AGENT_SYSTEM_PROMPT}]},
+            "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": contents,
             "tools": TOOLS,
         }
@@ -122,10 +217,7 @@ async def run_agent(user_message, tool_executor, history=None, max_steps=5):
             data = await call_gemini(payload, api_key)
         except Exception as e:
             print(f"[NakhlaGuard Agent] call failed: {type(e).__name__}: {e}")
-            return {
-                "answer": f"⚠️ Could not reach the AI assistant right now ({type(e).__name__}).",
-                "trace": trace,
-            }
+            return {"answer": f"{fail_prefix} ({type(e).__name__}).", "trace": trace}
 
         candidate = data["candidates"][0]["content"]
         parts = candidate.get("parts", [])
@@ -152,9 +244,10 @@ async def run_agent(user_message, tool_executor, history=None, max_steps=5):
             except Exception as e:
                 tool_result = {"error": str(e)}
 
-        # نترجم أي تصنيف شدة عربي (سليم/مبكرة/متوسطة/متقدمة) للإنجليزي
-        # قبل ما يوصل النموذج - يضمن ما يتسرب نص عربي بجواب الوكيل
-        tool_result = anglicize(tool_result)
+        # بالإنجليزي: نترجم أي تصنيف شدة عربي (سليم/مبكرة...) للإنجليزي
+        # قبل ما يوصل النموذج. بالعربي: نبقيها كما هي (أطبع لجواب عربي).
+        if language in ("en", "ur"):
+            tool_result = anglicize(tool_result)
 
         contents.append({
             "role": "user",
@@ -166,7 +259,4 @@ async def run_agent(user_message, tool_executor, history=None, max_steps=5):
             }],
         })
 
-    return {
-        "answer": "⚠️ The agent used several tools without reaching a final answer - try rephrasing your question.",
-        "trace": trace,
-    }
+    return {"answer": stuck_msg, "trace": trace}

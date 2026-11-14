@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NakhlaGuard — Farmers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=Tajawal:wght@400;500;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14201B; --ink-soft:#4A5750; --sand:#EDE6D6; --sand-deep:#E1D8C2;
+    --palm:#1F5C4A; --palm-deep:#123A2E; --date:#B8752E; --card:#FBF9F3;
+    --healthy:#2E8B57; --alert:#E11D2A; --warn-bg:#FFF4DC; --warn-line:#E4B85A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:'IBM Plex Sans',sans-serif; background:var(--sand); color:var(--ink); min-height:100vh; padding:0 0 28px; line-height:1.6}
+  body.rtl{font-family:'Tajawal',sans-serif; direction:rtl}
+  h1,h2{font-family:'Space Grotesk',sans-serif}
+  body.rtl h1, body.rtl h2{font-family:'Tajawal',sans-serif}
+  .wrap{max-width:640px; margin:0 auto; padding:0 16px}
+  header.hero{padding:18px 0 8px}
+  h1{font-size:1.4rem; color:var(--palm-deep); margin-bottom:6px}
+  .sub{color:var(--ink-soft); font-size:.95rem}
+
+  #langToggle{position:fixed; top:14px; right:14px; z-index:1000; background:var(--ink); border:1px solid rgba(237,230,214,.35); color:var(--sand); padding:7px 16px; border-radius:20px; font-size:.78rem; cursor:pointer; font-family:inherit}
+  .count{display:flex; align-items:center; gap:10px; background:var(--palm-deep); color:var(--sand); border-radius:14px; padding:12px 16px; margin:14px 0 10px}
+  .count .n{font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:700; color:#F3C677; min-width:2ch; text-align:center; line-height:1}
+  .count .t{font-size:.9rem; line-height:1.5}
+  .note{background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:12px; padding:10px 14px; font-size:.84rem; color:#5b4310; margin-bottom:14px}
+
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px}
+  .step{background:var(--card); border-radius:12px; padding:10px 8px; text-align:center; font-size:.8rem; color:var(--ink-soft)}
+  .step b{display:block; font-size:1.2rem; color:var(--palm); font-family:'Space Grotesk',sans-serif}
+
+  .seg{display:flex; background:var(--sand-deep); border-radius:14px; padding:4px; margin-bottom:14px; gap:4px}
+  .seg button{flex:1; border:none; background:transparent; padding:10px 6px; border-radius:10px; font-family:inherit; font-size:.9rem; font-weight:600; color:var(--ink-soft); cursor:pointer}
+  .seg button.on{background:var(--palm); color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--palm-deep); outline-offset:2px}
+
+  .card{background:var(--card); border-radius:14px; padding:18px; margin-bottom:14px; border-top:4px solid var(--date)}
+  .card h2{font-size:1.05rem; color:var(--palm-deep); margin-bottom:4px}
+  .card .lead{font-size:.86rem; color:var(--ink-soft); margin-bottom:12px}
+  label{display:block; font-size:.82rem; font-weight:600; margin:10px 0 5px}
+  input[type=text], input[type=tel], textarea{width:100%; padding:10px; border:1.5px solid var(--sand-deep); border-radius:8px; font-family:inherit; background:#fff; font-size:.92rem; color:var(--ink)}
+  textarea{min-height:68px; resize:vertical}
+  input:focus, textarea:focus{outline:2px solid var(--palm); outline-offset:1px}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media (max-width:420px){.two{grid-template-columns:1fr}}
+  .consent{display:flex; gap:10px; align-items:flex-start; font-size:.82rem; font-weight:400; margin:14px 0 0}
+  .consent input{width:20px; height:20px; margin-top:3px; flex:none; accent-color:var(--palm)}
+  .btn{display:inline-block; margin-top:14px; padding:11px 22px; background:var(--palm); color:#fff; border:none; border-radius:10px; font-family:inherit; font-weight:700; font-size:.92rem; cursor:pointer; text-decoration:none}
+  .btn:hover{background:var(--palm-deep)}
+  .btn.alt{background:var(--date); color:var(--ink)}
+  .btn.small{margin-top:8px; padding:8px 14px; font-size:.82rem}
+  .btn[disabled]{opacity:.55; cursor:wait}
+  .msg{margin-top:12px; font-size:.88rem; border-radius:10px; padding:10px 12px; display:none}
+  .msg.ok{display:block; background:#E3F3E8; color:#164a2c; border:1px solid #9fd2b1}
+  .msg.err{display:block; background:#FBE5E5; color:#7a1d20; border:1px solid #e3a3a5}
+  .msg.info{display:block; background:#EEF1F6; color:#2c3a52; border:1px solid #c5cfe0}
+
+  .mini{list-style:none; display:flex; gap:8px; margin:0 0 14px; padding:0}
+  .mini li{flex:1; display:flex; align-items:center; gap:8px; font-size:.82rem; color:var(--ink-soft); background:#fff; border:1px solid var(--sand-deep); border-radius:10px; padding:7px 10px}
+  .mini li b{width:22px; height:22px; border-radius:50%; background:var(--sand-deep); color:var(--ink-soft); display:inline-flex; align-items:center; justify-content:center; font-size:.78rem; flex:none}
+  .mini li.on{border-color:var(--palm); color:var(--palm-deep); font-weight:700}
+  .mini li.on b{background:var(--palm); color:#fff}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{border:1.5px solid var(--sand-deep); background:#fff; color:var(--ink); border-radius:999px; padding:8px 14px; font-family:inherit; font-size:.86rem; cursor:pointer}
+  .chip[aria-checked=true]{background:var(--palm); border-color:var(--palm); color:#fff; font-weight:700}
+  .chip:focus-visible{outline:2px solid var(--palm-deep); outline-offset:2px}
+  .areabar{display:flex; align-items:center; justify-content:space-between; gap:10px; background:#EEF3EF; border-radius:10px; padding:8px 12px; margin-bottom:4px; font-size:.9rem}
+  .areabar b{color:var(--palm-deep)}
+  .linkbtn{border:none; background:none; color:var(--palm-deep); font-family:inherit; font-size:.82rem; text-decoration:underline; cursor:pointer; padding:4px}
+  .geo{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px}
+  .geo .st{font-size:.8rem; color:var(--ink-soft)}
+  .hint{font-size:.76rem; color:var(--ink-soft); margin-top:6px; line-height:1.7}
+  .item{background:#fff; border:1px solid var(--sand-deep); border-radius:12px; padding:12px 14px; margin-top:10px}
+  .item .top{display:flex; justify-content:space-between; gap:8px; align-items:flex-start; flex-wrap:wrap}
+  .item .where{font-weight:700}
+  .item .meta{font-size:.8rem; color:var(--ink-soft); margin-top:2px}
+  .item .det{font-size:.86rem; margin-top:6px}
+  .pill{font-size:.74rem; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; background:#8a8a8a; white-space:nowrap}
+  .pill.open{background:var(--date)} .pill.acc{background:var(--healthy)} .pill.sev{background:var(--alert)}
+  .tel{display:inline-block; direction:ltr; unicode-bidi:embed; font-weight:700; color:var(--palm-deep)}
+  .empty{color:var(--ink-soft); font-size:.88rem; padding:10px 0}
+  .hidden{display:none !important}
+
+  /* ---- Urdu ---- */
+  body.lang-ur, body.lang-ur *:not(code){font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic','Tajawal',serif !important}
+  body.lang-ur{line-height:2.1}
+  body.lang-ur h1, body.lang-ur h2{line-height:2}
+  body.lang-ur button, body.lang-ur input, body.lang-ur textarea{line-height:1.9}
+</style>
+</head>
+<body class="rtl">
+<button id="langToggle" onclick="toggleLang()">English</button>
+<div class="wrap">
+  <header class="hero">
+    <h1 data-k="title">المزارعون</h1>
+    <p class="sub" data-k="sub"></p>
+  </header>
+
+  <div class="count" role="status" aria-live="polite">
+    <div class="n" id="helperN">–</div>
+    <div class="t" id="helperT"></div>
+  </div>
+  <div class="note" data-k="proto"></div>
+
+  <div class="steps" aria-hidden="false">
+    <div class="step"><b>1</b><span data-k="s1"></span></div>
+    <div class="step"><b>2</b><span data-k="s2"></span></div>
+    <div class="step"><b>3</b><span data-k="s3"></span></div>
+  </div>
+
+  <div class="seg" role="tablist">
+    <button type="button" role="tab" id="tabNeed" data-view="need" data-k="segNeed"></button>
+    <button type="button" role="tab" id="tabHelp" data-view="help" data-k="segHelp"></button>
+    <button type="button" role="tab" id="tabMine" data-view="mine" data-k="segMine"></button>
+  </div>
+
+  <!-- أحتاج مزارعًا -->
+  <section id="viewNeed" role="tabpanel">
+    <div class="card">
+      <h2 data-k="needTitle"></h2>
+      <p class="lead" data-k="needLead"></p>
+      <form id="needForm" novalidate>
+        <ol class="mini" aria-label="steps">
+          <li id="m1" class="on"><b>1</b><span data-k="stepArea"></span></li>
+          <li id="m2"><b>2</b><span data-k="stepDetails"></span></li>
+        </ol>
+
+        <div id="nStep1">
+          <label for="nArea" data-k="area"></label>
+          <input type="text" id="nArea" name="area" autocomplete="address-level2" maxlength="80" data-kp="areaPh">
+          <div class="geo">
+            <button class="btn alt small" type="button" id="nGeo" data-k="geoBtn" style="margin-top:0"></button>
+            <span class="st" id="nGeoSt" role="status" aria-live="polite"></span>
+          </div>
+          <div class="hint" data-k="geoNote"></div>
+          <button class="btn" type="button" id="nNext" data-k="next"></button>
+          <div class="msg" id="n1Msg" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="nStep2" class="hidden">
+          <div class="areabar"><span><span data-k="areaL"></span>: <b id="nAreaShow"></b></span><button class="linkbtn" type="button" id="nEdit" data-k="change"></button></div>
+          <label id="lWhen" data-k="when"></label>
+          <div class="chips" id="nWhen" role="radiogroup" aria-labelledby="lWhen">
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="urgent" data-k="w_urgent"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="3days" data-k="w_3days"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="week" data-k="w_week"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="flexible" data-k="w_flexible"></button>
+          </div>
+          <label id="lPurpose" data-k="purpose"></label>
+          <div class="chips" id="nPurpose" role="radiogroup" aria-labelledby="lPurpose">
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="inspect" data-k="p_inspect"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="treat" data-k="p_treat"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="remove" data-k="p_remove"></button>
+            <button type="button" class="chip" role="radio" aria-checked="false" data-v="other" data-k="p_other"></button>
+          </div>
+          <div class="two">
+            <div>
+              <label for="nPalm" data-k="palm"></label>
+              <input type="text" id="nPalm" name="palm_id" maxlength="60" data-kp="palmPh">
+            </div>
+            <div>
+              <label for="nSev" data-k="sev"></label>
+              <input type="text" id="nSev" name="severity" maxlength="20" data-kp="sevPh">
+            </div>
+          </div>
+          <label for="nDet" data-k="details"></label>
+          <textarea id="nDet" name="details" maxlength="300" data-kp="detailsPh"></textarea>
+          <div class="two">
+            <div>
+              <label for="nName" data-k="yourName"></label>
+              <input type="text" id="nName" name="name" autocomplete="name" maxlength="60">
+            </div>
+            <div>
+              <label for="nPhone" data-k="yourPhone"></label>
+              <input type="tel" id="nPhone" name="phone" autocomplete="tel" inputmode="tel" maxlength="20" dir="ltr">
+            </div>
+          </div>
+          <label class="consent"><input type="checkbox" id="nConsent"><span data-k="consentNeed"></span></label>
+          <button class="btn" type="submit" id="nBtn" data-k="sendReq"></button>
+          <div class="msg" id="nMsg" role="status" aria-live="polite"></div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- أنا مزارع -->
+  <section id="viewHelp" class="hidden" role="tabpanel">
+    <div class="card">
+      <h2 data-k="helpTitle"></h2>
+      <p class="lead" data-k="helpLead"></p>
+      <form id="helpForm" novalidate>
+        <div class="two">
+          <div>
+            <label for="hName" data-k="yourName"></label>
+            <input type="text" id="hName" autocomplete="name" maxlength="60">
+          </div>
+          <div>
+            <label for="hPhone" data-k="yourPhone"></label>
+            <input type="tel" id="hPhone" autocomplete="tel" inputmode="tel" maxlength="20" dir="ltr">
+          </div>
+        </div>
+        <label for="hArea" data-k="areaHelp"></label>
+        <input type="text" id="hArea" maxlength="80" data-kp="areaPh">
+        <label for="hNote" data-k="noteHelp"></label>
+        <input type="text" id="hNote" maxlength="160" data-kp="noteHelpPh">
+        <label class="consent"><input type="checkbox" id="hConsent"><span data-k="consentHelp"></span></label>
+        <button class="btn" type="submit" id="hBtn" data-k="registerMe"></button>
+        <div class="msg" id="hMsg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div class="card" style="border-top-color:var(--palm)">
+      <h2 data-k="openTitle"></h2>
+      <p class="lead" data-k="openLead"></p>
+      <label for="oPhone" data-k="regPhone"></label>
+      <input type="tel" id="oPhone" autocomplete="tel" inputmode="tel" maxlength="20" dir="ltr">
+      <button class="btn alt" type="button" id="oBtn" data-k="showOpen"></button>
+      <div class="msg" id="oMsg" role="status" aria-live="polite"></div>
+      <div id="oList"></div>
+    </div>
+  </section>
+
+  <!-- طلباتي -->
+  <section id="viewMine" class="hidden" role="tabpanel">
+    <div class="card">
+      <h2 data-k="mineTitle"></h2>
+      <p class="lead" data-k="mineLead"></p>
+      <label for="mPhone" data-k="yourPhone"></label>
+      <input type="tel" id="mPhone" autocomplete="tel" inputmode="tel" maxlength="20" dir="ltr">
+      <button class="btn" type="button" id="mBtn" data-k="showMine"></button>
+      <div class="msg" id="mMsg" role="status" aria-live="polite"></div>
+      <div id="mList"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+var LANG_CYCLE = ['ar', 'en', 'ur'];
+var LOCALES = { ar: 'ar-SA', en: 'en-US', ur: 'ur-PK' };
+
+var T = {
+  ar: {
+    title: 'المزارعون',
+    sub: 'إذا كنت بعيدًا عن مزرعتك وجاءك تنبيه، فاطلب من مزارع مسجّل في منطقتك أن يزور النخلة.',
+    proto: 'نموذج أولي: المساعدون هنا هم من سجّلوا أنفسهم فقط. لا نضمن وجود مساعد في كل منطقة ولا سرعة استجابته، ولا نتحقق من هوية أحد. الاتفاق على الزيارة والأجر يكون بينك وبين المساعد مباشرة.',
+    s1: 'يصلك تنبيه وأنت بعيد عن المزرعة', s2: 'تطلب زيارة من مساعد في منطقتك', s3: 'يقبل المساعد ثم تتواصلان مباشرة',
+    segNeed: 'أحتاج مزارعًا', segHelp: 'أنا مزارع', segMine: 'طلباتي',
+    needTitle: 'اطلب زيارة لنخلتك',
+    areaPh: 'مثلًا: الأحساء، القطيف', palm: 'رقم النخلة (اختياري)', palmPh: 'مثلًا: Palm-B07',
+    sev: 'درجة الإصابة (اختياري)', sevPh: 'مثلًا: متقدمة', details: 'وصف الحالة (اختياري)',
+    detailsPh: 'مثلًا: وصلني تنبيه بدرجة متقدمة، وأحتاج من يفحص النخلة ويبلّغ الجهة الزراعية المختصة',
+    yourName: 'الاسم', yourPhone: 'رقم الجوال',
+    sendReq: 'أرسل الطلب',
+    helpTitle: 'سجّل نفسك مساعدًا', helpLead: 'إذا كنت مزارعًا أو عاملًا في منطقتك وتريد مساعدة أصحاب النخيل الغائبين عن مزارعهم.',
+    areaHelp: 'المنطقة التي تستطيع الوصول إليها', noteHelp: 'ما تستطيع تقديمه (اختياري)', noteHelpPh: 'مثلًا: لدي سلّم ومعدات رشّ',
+    consentHelp: 'أوافق على ظهور اسمي ومنطقتي في عدّاد المساعدين، وعلى مشاركة رقمي مع من أقبل طلبه فقط.',
+    registerMe: 'سجّلني',
+    openTitle: 'الطلبات المفتوحة', openLead: 'للمساعدين المسجّلين فقط. أدخل الرقم الذي سجّلت به لتظهر لك الطلبات.',
+    regPhone: 'رقمك المسجّل', showOpen: 'اعرض الطلبات',
+    mineTitle: 'تتبّع طلباتي', mineLead: 'أدخل الرقم الذي أرسلت به الطلب لتعرف هل قبله أحد.',
+    showMine: 'اعرض طلباتي',
+    countZero: 'لا يوجد مساعدون مسجّلون بعد. كن أول من يسجّل في منطقتك.',
+    countSome: function (n) { return n === 1 ? 'مساعد مسجّل حاليًا' : 'مساعدون مسجّلون حاليًا'; },
+    countErr: 'تعذّر قراءة عدد المساعدين.',
+    okSent: function (id, n) { return 'تم تسجيل طلبك (رقم ' + id + '). ' + (n > 0 ? 'عدد المساعدين المسجّلين الآن: ' + n + '. سيظهر لك اسم من يقبل الطلب ورقمه في تبويب «طلباتي».' : 'لا يوجد مساعدون مسجّلون بعد، فلن يقبل الطلب أحد حتى يسجّل مساعد في منطقتك. تواصل في الأثناء مع جهة الاتصال الاحتياطية أو الجهة الزراعية المختصة.'); },
+    okReg: 'تم تسجيلك. يمكنك الآن عرض الطلبات المفتوحة أدناه.', okRegUpd: 'تم تحديث بياناتك.',
+    errGeneric: 'تعذّر الإرسال. حاول مرة أخرى.', errRate: 'طلبات كثيرة، حاول بعد دقيقة.',
+    errInvalid: 'تحقق من الاسم والمنطقة ورقم الجوال.', errConsent: 'يلزم الموافقة على مشاركة البيانات قبل المتابعة.',
+    errTooMany: 'لديك خمسة طلبات مفتوحة بالفعل.', errNotHelper: 'هذا الرقم غير مسجّل مساعدًا.', errTaken: 'سبقك أحد إلى هذا الطلب.',
+    emptyOpen: 'لا توجد طلبات مفتوحة الآن.', emptyMine: 'لا توجد طلبات بهذا الرقم.',
+    accept: 'أقبل الطلب', accepted: 'تم قبول الطلب. تواصل مع صاحبه الآن.', call: 'اتصل',
+    stOpen: 'بانتظار مساعد', stAcc: function (n) { return 'قبله ' + n; },
+    palmL: 'النخلة', fromL: 'صاحب الطلب', helperL: 'المساعد', sevL: 'الدرجة',
+    stepArea: "المنطقة",
+    stepDetails: "التفاصيل",
+    areaL: "المنطقة",
+    change: "تعديل",
+    next: "التالي",
+    area: "أين المزرعة؟ (المنطقة أو المدينة)",
+    geoBtn: "📍 أضف موقعي الدقيق (اختياري)",
+    geoBusy: "جارٍ تحديد الموقع…",
+    geoOk: "تمت إضافة الموقع، وسيراه المساعد الذي يقبل الطلب.",
+    geoFail: "تعذّر تحديد الموقع. اكتب المنطقة فقط.",
+    geoNo: "هذا المتصفح لا يدعم تحديد الموقع.",
+    geoFromPalm: "أُضيف موقع النخلة من سجلّك. اكتب اسم المنطقة أو المدينة.",
+    geoNote: "لا يمكن تحويل الإحداثيات إلى اسم منطقة دون خدمة خرائط خارجية، لذلك اكتب المنطقة بنفسك؛ والموقع الدقيق يساعد المساعد على الوصول إلى المزرعة.",
+    when: "متى تحتاجه؟",
+    w_urgent: "اليوم (عاجل)",
+    w_3days: "خلال 3 أيام",
+    w_week: "خلال أسبوع",
+    w_flexible: "في أي وقت",
+    purpose: "لأي غرض؟",
+    p_inspect: "فحص النخلة",
+    p_treat: "علاج أو رش",
+    p_remove: "إزالة نخلة مصابة",
+    p_other: "غرض آخر",
+    errNeedChoice: "اختر متى تحتاجه ولأي غرض.",
+    errNeedArea: "اكتب المنطقة أولًا.",
+    whenL: "الموعد",
+    purposeL: "الغرض",
+    mapL: "الموقع على الخريطة",
+    needLead: "اكتب المنطقة أولًا، ثم حدّد متى تحتاج المساعد ولأي غرض. يصل الطلب إلى المساعدين المسجّلين، ومن يقبله يظهر لك اسمه ورقمه في تبويب «طلباتي».",
+    consentNeed: "أوافق على مشاركة اسمي ورقم جوالي (وموقعي إن أضفته) مع المساعدين المسجّلين لأجل هذا الطلب."
+  },
+  en: {
+    title: 'Farmers',
+    sub: 'If you are away from your farm and an alert arrives, ask a registered farmer in your area to visit the palm.',
+    proto: 'Prototype: the helpers here are only people who registered themselves. We do not guarantee a helper in every area or how fast anyone responds, and we do not verify anyone\'s identity. The visit and any payment are agreed directly between you and the helper.',
+    s1: 'An alert reaches you while you are away', s2: 'You request a visit from a helper in your area', s3: 'A helper accepts and you talk directly',
+    segNeed: 'I need a farmer', segHelp: 'I am a farmer', segMine: 'My requests',
+    needTitle: 'Request a visit to your palm',
+    areaPh: 'e.g. Al-Ahsa, Qatif', palm: 'Palm ID (optional)', palmPh: 'e.g. Palm-B07',
+    sev: 'Severity (optional)', sevPh: 'e.g. Advanced', details: 'Describe the situation (optional)',
+    detailsPh: 'e.g. I received an advanced-level alert and need someone to inspect the palm and report to the agriculture authority',
+    yourName: 'Name', yourPhone: 'Mobile number',
+    sendReq: 'Send request',
+    helpTitle: 'Register as a helper', helpLead: 'If you are a farmer or worker in your area and want to help palm owners who are away from their farms.',
+    areaHelp: 'Area you can reach', noteHelp: 'What you can offer (optional)', noteHelpPh: 'e.g. I have a ladder and spraying equipment',
+    consentHelp: 'I agree that my name and area count in the helper counter, and that my number is shared only with the person whose request I accept.',
+    registerMe: 'Register me',
+    openTitle: 'Open requests', openLead: 'Registered helpers only. Enter the number you registered with to see requests.',
+    regPhone: 'Your registered number', showOpen: 'Show requests',
+    mineTitle: 'Track my requests', mineLead: 'Enter the number you sent the request with to see whether someone accepted.',
+    showMine: 'Show my requests',
+    countZero: 'No helpers have registered yet. Be the first in your area.',
+    countSome: function (n) { return n === 1 ? 'registered helper right now' : 'registered helpers right now'; },
+    countErr: 'Could not read the helper count.',
+    okSent: function (id, n) { return 'Your request was recorded (no. ' + id + '). ' + (n > 0 ? 'Registered helpers right now: ' + n + '. Whoever accepts will appear with name and number under "My requests".' : 'No helpers are registered yet, so nobody can accept until a helper registers in your area. Meanwhile, contact your backup contact or the local agriculture authority.'); },
+    okReg: 'You are registered. You can now view open requests below.', okRegUpd: 'Your details were updated.',
+    errGeneric: 'Could not send. Please try again.', errRate: 'Too many requests, try again in a minute.',
+    errInvalid: 'Check the name, area and mobile number.', errConsent: 'You must agree to share the details before continuing.',
+    errTooMany: 'You already have five open requests.', errNotHelper: 'This number is not registered as a helper.', errTaken: 'Someone already took this request.',
+    emptyOpen: 'No open requests right now.', emptyMine: 'No requests found for this number.',
+    accept: 'Accept request', accepted: 'Request accepted. Contact the owner now.', call: 'Call',
+    stOpen: 'Waiting for a helper', stAcc: function (n) { return 'Accepted by ' + n; },
+    palmL: 'Palm', fromL: 'Requested by', helperL: 'Helper', sevL: 'Severity',
+    stepArea: "Area",
+    stepDetails: "Details",
+    areaL: "Area",
+    change: "Change",
+    next: "Next",
+    area: "Where is the farm? (area or city)",
+    geoBtn: "📍 Add my exact location (optional)",
+    geoBusy: "Locating…",
+    geoOk: "Location added; the helper who accepts will see it.",
+    geoFail: "Could not get the location. Just type the area.",
+    geoNo: "This browser does not support location.",
+    geoFromPalm: "The palm's location from your registry was added. Type the area or city name.",
+    geoNote: "Coordinates cannot be turned into an area name without an outside map service, so type the area yourself; the exact location helps the helper reach the farm.",
+    when: "When do you need him?",
+    w_urgent: "Today (urgent)",
+    w_3days: "Within 3 days",
+    w_week: "Within a week",
+    w_flexible: "Any time",
+    purpose: "What for?",
+    p_inspect: "Inspect the palm",
+    p_treat: "Treatment or spraying",
+    p_remove: "Remove an infested palm",
+    p_other: "Something else",
+    errNeedChoice: "Choose when you need him and what for.",
+    errNeedArea: "Enter the area first.",
+    whenL: "When",
+    purposeL: "Purpose",
+    mapL: "Location on the map",
+    needLead: "Enter the area first, then say when you need the helper and what for. The request goes to registered helpers; whoever accepts appears with name and number under \"My requests\".",
+    consentNeed: "I agree to share my name and mobile number (and my location, if I added it) with registered helpers for this request."
+  },
+  ur: {
+    title: 'کسان',
+    sub: 'اگر آپ اپنے باغ سے دور ہیں اور الرٹ آ جائے تو اپنے علاقے کے کسی رجسٹرڈ کسان سے کہیں کہ وہ کھجور کو دیکھنے جائے۔',
+    proto: 'ابتدائی نمونہ: یہاں صرف وہی مددگار ہیں جنہوں نے خود کو رجسٹر کیا ہے۔ ہم ہر علاقے میں مددگار کی موجودگی یا اس کے جلد پہنچنے کی ضمانت نہیں دیتے، اور کسی کی شناخت کی تصدیق نہیں کرتے۔ دورے اور اجرت کا معاملہ آپ اور مددگار کے درمیان براہِ راست طے ہوگا۔',
+    s1: 'آپ باغ سے دور ہوں اور الرٹ پہنچے', s2: 'آپ اپنے علاقے کے مددگار سے دورے کی درخواست کریں', s3: 'مددگار قبول کرے اور آپ براہِ راست بات کریں',
+    segNeed: 'مجھے کسان چاہیے', segHelp: 'میں کسان ہوں', segMine: 'میری درخواستیں',
+    needTitle: 'اپنی کھجور کے لیے دورے کی درخواست',
+    areaPh: 'مثلاً: الأحساء، القطیف', palm: 'کھجور نمبر (اختیاری)', palmPh: 'مثلاً: Palm-B07',
+    sev: 'شدت (اختیاری)', sevPh: 'مثلاً: شدید', details: 'صورتِ حال بیان کریں (اختیاری)',
+    detailsPh: 'مثلاً: شدید درجے کا الرٹ آیا ہے، کھجور کا معائنہ کرنے اور زرعی محکمے کو اطلاع دینے والا چاہیے',
+    yourName: 'نام', yourPhone: 'موبائل نمبر',
+    sendReq: 'درخواست بھیجیں',
+    helpTitle: 'خود کو مددگار کے طور پر رجسٹر کریں', helpLead: 'اگر آپ اپنے علاقے میں کسان یا مزدور ہیں اور باغ سے دور رہنے والے کھجور مالکان کی مدد کرنا چاہتے ہیں۔',
+    areaHelp: 'وہ علاقہ جہاں آپ پہنچ سکتے ہیں', noteHelp: 'آپ کیا مدد کر سکتے ہیں (اختیاری)', noteHelpPh: 'مثلاً: میرے پاس سیڑھی اور سپرے کا سامان ہے',
+    consentHelp: 'میں متفق ہوں کہ میرا نام اور علاقہ مددگاروں کی گنتی میں شامل ہو، اور میرا نمبر صرف اسی کو دیا جائے جس کی درخواست میں قبول کروں۔',
+    registerMe: 'مجھے رجسٹر کریں',
+    openTitle: 'کھلی درخواستیں', openLead: 'صرف رجسٹرڈ مددگاروں کے لیے۔ درخواستیں دیکھنے کے لیے وہ نمبر لکھیں جس سے رجسٹر کیا تھا۔',
+    regPhone: 'آپ کا رجسٹرڈ نمبر', showOpen: 'درخواستیں دکھائیں',
+    mineTitle: 'میری درخواستوں کی صورتِ حال', mineLead: 'جس نمبر سے درخواست بھیجی تھی وہ لکھیں تاکہ معلوم ہو کسی نے قبول کی یا نہیں۔',
+    showMine: 'میری درخواستیں دکھائیں',
+    countZero: 'ابھی کسی مددگار نے رجسٹر نہیں کیا۔ اپنے علاقے میں پہلے بنیں۔',
+    countSome: function (n) { return 'رجسٹرڈ مددگار فی الحال'; },
+    countErr: 'مددگاروں کی تعداد معلوم نہیں ہو سکی۔',
+    okSent: function (id, n) { return 'آپ کی درخواست درج ہو گئی (نمبر ' + id + ')۔ ' + (n > 0 ? 'اس وقت رجسٹرڈ مددگار: ' + n + '۔ جو قبول کرے گا اس کا نام اور نمبر «میری درخواستیں» میں نظر آئے گا۔' : 'ابھی کوئی مددگار رجسٹر نہیں ہے، اس لیے جب تک آپ کے علاقے میں کوئی رجسٹر نہ ہو کوئی قبول نہیں کرے گا۔ اس دوران اپنے متبادل رابطے یا مقامی زرعی محکمے سے رابطہ کریں۔'); },
+    okReg: 'آپ رجسٹر ہو گئے۔ اب نیچے کھلی درخواستیں دیکھ سکتے ہیں۔', okRegUpd: 'آپ کی معلومات اپڈیٹ ہو گئیں۔',
+    errGeneric: 'بھیجا نہیں جا سکا۔ دوبارہ کوشش کریں۔', errRate: 'بہت زیادہ درخواستیں، ایک منٹ بعد کوشش کریں۔',
+    errInvalid: 'نام، علاقہ اور موبائل نمبر دیکھ لیں۔', errConsent: 'آگے بڑھنے سے پہلے معلومات شیئر کرنے کی منظوری ضروری ہے۔',
+    errTooMany: 'آپ کی پانچ درخواستیں پہلے سے کھلی ہیں۔', errNotHelper: 'یہ نمبر مددگار کے طور پر رجسٹر نہیں ہے۔', errTaken: 'یہ درخواست کوئی اور قبول کر چکا ہے۔',
+    emptyOpen: 'اس وقت کوئی کھلی درخواست نہیں۔', emptyMine: 'اس نمبر پر کوئی درخواست نہیں ملی۔',
+    accept: 'درخواست قبول کریں', accepted: 'درخواست قبول ہو گئی۔ اب مالک سے رابطہ کریں۔', call: 'کال کریں',
+    stOpen: 'مددگار کا انتظار', stAcc: function (n) { return n + ' نے قبول کی'; },
+    palmL: 'کھجور', fromL: 'درخواست گزار', helperL: 'مددگار', sevL: 'شدت',
+    stepArea: "علاقہ",
+    stepDetails: "تفصیل",
+    areaL: "علاقہ",
+    change: "تبدیل کریں",
+    next: "آگے",
+    area: "باغ کہاں ہے؟ (علاقہ یا شہر)",
+    geoBtn: "📍 میرا درست مقام شامل کریں (اختیاری)",
+    geoBusy: "مقام معلوم کیا جا رہا ہے…",
+    geoOk: "مقام شامل ہو گیا؛ جو مددگار درخواست قبول کرے گا اسے نظر آئے گا۔",
+    geoFail: "مقام معلوم نہیں ہو سکا۔ بس علاقہ لکھ دیں۔",
+    geoNo: "یہ براؤزر مقام کی سہولت نہیں دیتا۔",
+    geoFromPalm: "آپ کے ریکارڈ سے کھجور کا مقام شامل کر دیا گیا۔ علاقے یا شہر کا نام لکھیں۔",
+    geoNote: "بیرونی نقشے کی سروس کے بغیر نقاط سے علاقے کا نام نہیں بنایا جا سکتا، اس لیے علاقہ خود لکھیں؛ درست مقام مددگار کو باغ تک پہنچنے میں مدد دیتا ہے۔",
+    when: "آپ کو کب چاہیے؟",
+    w_urgent: "آج (فوری)",
+    w_3days: "3 دن کے اندر",
+    w_week: "ایک ہفتے کے اندر",
+    w_flexible: "کسی بھی وقت",
+    purpose: "کس کام کے لیے؟",
+    p_inspect: "کھجور کا معائنہ",
+    p_treat: "علاج یا سپرے",
+    p_remove: "متاثرہ کھجور ہٹانا",
+    p_other: "کوئی اور کام",
+    errNeedChoice: "منتخب کریں کہ کب چاہیے اور کس کام کے لیے۔",
+    errNeedArea: "پہلے علاقہ لکھیں۔",
+    whenL: "وقت",
+    purposeL: "مقصد",
+    mapL: "نقشے پر مقام",
+    needLead: "پہلے علاقہ لکھیں، پھر بتائیں کہ مددگار کب اور کس کام کے لیے چاہیے۔ درخواست رجسٹرڈ مددگاروں تک پہنچتی ہے؛ جو قبول کرے گا اس کا نام اور نمبر «میری درخواستیں» میں نظر آئے گا۔",
+    consentNeed: "میں اس درخواست کے لیے اپنا نام اور موبائل نمبر (اور مقام، اگر شامل کیا ہو) رجسٹرڈ مددگاروں کے ساتھ شیئر کرنے سے متفق ہوں۔"
+  }
+};
+
+function getLang(){ var l = null; try{ l = localStorage.getItem('nakhlaguard-lang'); }catch(e){} return (l === 'ar' || l === 'en' || l === 'ur') ? l : 'ar'; }
+function tt(){ return T[getLang()]; }
+var helperCount = null;
+
+function renderCount(){
+  var t = tt(), n = document.getElementById('helperN'), x = document.getElementById('helperT');
+  if(helperCount === null){ n.textContent = '–'; x.textContent = t.countErr; return; }
+  n.textContent = helperCount;
+  x.textContent = helperCount === 0 ? t.countZero : t.countSome(helperCount);
+}
+
+function setLang(lang){
+  if(LANG_CYCLE.indexOf(lang) < 0) lang = 'ar';
+  try{ localStorage.setItem('nakhlaguard-lang', lang); }catch(e){}
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
+  document.body.classList.toggle('rtl', lang !== 'en');
+  document.body.classList.toggle('lang-ur', lang === 'ur');
+  var t = T[lang];
+  document.querySelectorAll('[data-k]').forEach(function(el){ var v = t[el.getAttribute('data-k')]; if(typeof v === 'string') el.textContent = v; });
+  document.querySelectorAll('[data-kp]').forEach(function(el){ var v = t[el.getAttribute('data-kp')]; if(typeof v === 'string') el.placeholder = v; });
+  document.title = 'NakhlaGuard — ' + t.title;
+  renderCount();
+  var gs = document.getElementById('nGeoSt'); if(gs && gs.getAttribute('data-gk')) gs.textContent = t[gs.getAttribute('data-gk')];
+  var tg = document.getElementById('langToggle'); if(tg) tg.textContent = lang === 'ar' ? 'English' : lang === 'en' ? 'اردو' : 'العربية';
+  rerenderLists();
+}
+function toggleLang(){ setLang(LANG_CYCLE[(LANG_CYCLE.indexOf(getLang()) + 1) % LANG_CYCLE.length]); }
+
+// ---------- helpers ----------
+function $(id){ return document.getElementById(id); }
+function show(el, cls, text){ el.className = 'msg ' + cls; el.textContent = text; }
+function store(k, v){ try{ localStorage.setItem('nk-farmers-' + k, v); }catch(e){} }
+function recall(k){ try{ return localStorage.getItem('nk-farmers-' + k) || ''; }catch(e){ return ''; } }
+function errText(code, status){
+  var t = tt();
+  if(status === 429) return code === 'too_many_open_requests' ? t.errTooMany : t.errRate;
+  if(code === 'consent_required') return t.errConsent;
+  if(code === 'invalid_input') return t.errInvalid;
+  if(code === 'not_a_registered_helper') return t.errNotHelper;
+  if(code === 'already_taken') return t.errTaken;
+  return t.errGeneric;
+}
+async function post(url, form){
+  var r = await fetch(url, { method: 'POST', body: form });
+  var j = {}; try{ j = await r.json(); }catch(e){}
+  return { ok: r.ok, status: r.status, body: j };
+}
+
+async function loadCount(){
+  try{
+    var r = await fetch('/helpers/count'); var j = await r.json();
+    helperCount = (j && typeof j.count === 'number') ? j.count : null;
+  }catch(e){ helperCount = null; }
+  renderCount();
+}
+
+// ---------- views ----------
+function showView(v){
+  ['need','help','mine'].forEach(function(k){
+    $('view' + k.charAt(0).toUpperCase() + k.slice(1)).classList.toggle('hidden', k !== v);
+    var b = $('tab' + k.charAt(0).toUpperCase() + k.slice(1));
+    b.classList.toggle('on', k === v); b.setAttribute('aria-selected', k === v ? 'true' : 'false');
+  });
+}
+document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ showView(b.getAttribute('data-view')); }); });
+
+// ---------- أحتاج مزارعًا ----------
+var needState = { when: '', purpose: '', coords: '' };
+var COORD_RE = /^\s*-?\d{1,3}\.\d+\s*,\s*-?\d{1,3}\.\d+\s*$/;
+function setStep(n){
+  $('nStep1').classList.toggle('hidden', n !== 1); $('nStep2').classList.toggle('hidden', n !== 2);
+  $('m1').classList.toggle('on', n === 1); $('m2').classList.toggle('on', n === 2);
+  if(n === 2) $('nAreaShow').textContent = $('nArea').value.trim();
+}
+function geoStatus(key){ $('nGeoSt').setAttribute('data-gk', key || ''); $('nGeoSt').textContent = key ? tt()[key] : ''; }
+function pickChip(group, key, btn){
+  group.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-checked', c === btn ? 'true' : 'false'); });
+  needState[key] = btn.getAttribute('data-v');
+}
+$('nWhen').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if(b) pickChip($('nWhen'), 'when', b); });
+$('nPurpose').addEventListener('click', function(e){ var b = e.target.closest('.chip'); if(b) pickChip($('nPurpose'), 'purpose', b); });
+$('nNext').addEventListener('click', function(){
+  if(!$('nArea').value.trim()){ show($('n1Msg'), 'err', tt().errNeedArea); $('nArea').focus(); return; }
+  $('n1Msg').className = 'msg'; $('n1Msg').textContent = '';
+  setStep(2);
+});
+$('nArea').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); $('nNext').click(); } });
+$('nEdit').addEventListener('click', function(){ setStep(1); $('nArea').focus(); });
+$('nGeo').addEventListener('click', function(){
+  if(!navigator.geolocation){ geoStatus('geoNo'); return; }
+  geoStatus('geoBusy');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    needState.coords = pos.coords.latitude.toFixed(5) + ',' + pos.coords.longitude.toFixed(5); geoStatus('geoOk');
+  }, function(){ needState.coords = ''; geoStatus('geoFail'); }, { enableHighAccuracy: true, timeout: 10000 });
+});
+
+$('needForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var msg = $('nMsg'), btn = $('nBtn');
+  if(!$('nArea').value.trim()){ setStep(1); show($('n1Msg'), 'err', tt().errNeedArea); return; }
+  if(!needState.when || !needState.purpose){ show(msg, 'err', tt().errNeedChoice); return; }
+  if(!$('nConsent').checked){ show(msg, 'err', tt().errConsent); return; }
+  var f = new FormData();
+  f.append('area', $('nArea').value); f.append('requester_name', $('nName').value); f.append('requester_phone', $('nPhone').value);
+  f.append('palm_id', $('nPalm').value); f.append('details', $('nDet').value); f.append('severity', $('nSev').value);
+  f.append('when_needed', needState.when); f.append('purpose', needState.purpose); f.append('coords', needState.coords); f.append('consent', 'yes');
+  btn.disabled = true;
+  try{
+    var r = await post('/visit-requests', f);
+    if(r.ok){
+      store('area', $('nArea').value); store('name', $('nName').value); store('phone', $('nPhone').value);
+      $('mPhone').value = $('nPhone').value;
+      show(msg, 'ok', tt().okSent(r.body.id, r.body.registered_helpers || 0));
+      loadCount();
+    } else show(msg, 'err', errText(r.body.error, r.status));
+  }catch(err){ show(msg, 'err', tt().errGeneric); }
+  btn.disabled = false;
+});
+
+// ---------- أنا مزارع ----------
+$('helpForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var msg = $('hMsg'), btn = $('hBtn');
+  if(!$('hConsent').checked){ show(msg, 'err', tt().errConsent); return; }
+  var f = new FormData();
+  f.append('name', $('hName').value); f.append('phone', $('hPhone').value); f.append('area', $('hArea').value);
+  f.append('note', $('hNote').value); f.append('consent', 'yes');
+  btn.disabled = true;
+  try{
+    var r = await post('/helpers', f);
+    if(r.ok){
+      store('hphone', $('hPhone').value); $('oPhone').value = $('hPhone').value;
+      show(msg, 'ok', r.body.status === 'updated' ? tt().okRegUpd : tt().okReg);
+      loadCount(); loadOpen(true);
+    } else show(msg, 'err', errText(r.body.error, r.status));
+  }catch(err){ show(msg, 'err', tt().errGeneric); }
+  btn.disabled = false;
+});
+
+var openData = null, mineData = null;
+function sevPill(s){ return s ? '<span class="pill sev">' + esc(s) + '</span>' : ''; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function fmtDate(iso){ try{ return new Date(iso + 'Z').toLocaleString(LOCALES[getLang()], { dateStyle: 'medium', timeStyle: 'short' }); }catch(e){ return ''; } }
+function mapLink(c){
+  if(!c || !COORD_RE.test(c)) return '';
+  return ' · <a href="https://www.google.com/maps?q=' + encodeURIComponent(c.replace(/\s/g, '')) + '" target="_blank" rel="noopener">' + esc(tt().mapL) + '</a>';
+}
+function needLine(q){
+  var t = tt(), parts = [];
+  if(q.when_needed && t['w_' + q.when_needed]) parts.push(esc(t.whenL) + ': ' + esc(t['w_' + q.when_needed]));
+  if(q.purpose && t['p_' + q.purpose]) parts.push(esc(t.purposeL) + ': ' + esc(t['p_' + q.purpose]));
+  return parts.length ? '<div class="det"><b>' + parts.join(' · ') + '</b>' + mapLink(q.coords) + '</div>' : (q.coords ? '<div class="det">' + mapLink(q.coords).slice(3) + '</div>' : '');
+}
+function telLink(p){ var clean = String(p).replace(/[^0-9+]/g, ''); return '<a class="tel" href="tel:' + esc(clean) + '">' + esc(p) + '</a>'; }
+
+function renderOpen(){
+  var el = $('oList'), t = tt();
+  if(openData === null){ el.innerHTML = ''; return; }
+  if(!openData.length){ el.innerHTML = '<div class="empty">' + esc(t.emptyOpen) + '</div>'; return; }
+  el.innerHTML = openData.map(function(q){
+    return '<div class="item"><div class="top"><div><div class="where">' + esc(q.area) + '</div>' +
+      '<div class="meta">' + (q.palm_id ? esc(t.palmL) + ': ' + esc(q.palm_id) + ' · ' : '') + esc(fmtDate(q.created_at)) + '</div></div>' + sevPill(q.severity) + '</div>' +
+      needLine(q) +
+      (q.details ? '<div class="det">' + esc(q.details) + '</div>' : '') +
+      '<div class="meta" style="margin-top:6px">' + esc(t.fromL) + ': ' + esc(q.requester_name) + ' · ' + telLink(q.requester_phone) + '</div>' +
+      '<button class="btn small" type="button" data-acc="' + q.id + '">' + esc(t.accept) + '</button></div>';
+  }).join('');
+  el.querySelectorAll('[data-acc]').forEach(function(b){ b.addEventListener('click', function(){ acceptReq(b.getAttribute('data-acc'), b); }); });
+}
+async function loadOpen(keepMsg){
+  var phone = $('oPhone').value.trim(), msg = $('oMsg');
+  if(!phone){ return; }
+  try{
+    var r = await fetch('/visit-requests?phone=' + encodeURIComponent(phone));
+    var j = await r.json();
+    if(r.ok){ store('hphone', phone); openData = j.requests || []; if(!keepMsg){ msg.className = 'msg'; msg.textContent = ''; } }
+    else { openData = null; show(msg, 'err', errText(j.error, r.status)); }
+  }catch(e){ openData = null; show(msg, 'err', tt().errGeneric); }
+  renderOpen();
+}
+$('oBtn').addEventListener('click', function(){ loadOpen(false); });
+async function acceptReq(id, btn){
+  var f = new FormData(); f.append('helper_phone', $('oPhone').value.trim());
+  btn.disabled = true;
+  try{
+    var r = await post('/visit-requests/' + encodeURIComponent(id) + '/accept', f);
+    if(r.ok) show($('oMsg'), 'ok', tt().accepted); else show($('oMsg'), 'err', errText(r.body.error, r.status));
+  }catch(e){ show($('oMsg'), 'err', tt().errGeneric); }
+  loadOpen(true);
+}
+
+// ---------- طلباتي ----------
+function renderMine(){
+  var el = $('mList'), t = tt();
+  if(mineData === null){ el.innerHTML = ''; return; }
+  if(!mineData.length){ el.innerHTML = '<div class="empty">' + esc(t.emptyMine) + '</div>'; return; }
+  el.innerHTML = mineData.map(function(q){
+    var acc = q.status === 'accepted' && q.helper;
+    return '<div class="item"><div class="top"><div><div class="where">' + esc(q.area) + '</div>' +
+      '<div class="meta">' + (q.palm_id ? esc(t.palmL) + ': ' + esc(q.palm_id) + ' · ' : '') + esc(fmtDate(q.created_at)) + '</div></div>' +
+      '<span class="pill ' + (acc ? 'acc' : 'open') + '">' + esc(acc ? t.stAcc(q.helper.name) : t.stOpen) + '</span></div>' +
+      needLine(q) +
+      (q.details ? '<div class="det">' + esc(q.details) + '</div>' : '') +
+      (acc ? '<div class="meta" style="margin-top:6px">' + esc(t.helperL) + ': ' + esc(q.helper.name) + ' · ' + telLink(q.helper.phone) + '</div>' +
+             '<a class="btn small" href="tel:' + esc(String(q.helper.phone).replace(/[^0-9+]/g, '')) + '">' + esc(t.call) + '</a>' : '') + '</div>';
+  }).join('');
+}
+async function loadMine(){
+  var phone = $('mPhone').value.trim(), msg = $('mMsg');
+  if(!phone){ return; }
+  try{
+    var r = await fetch('/visit-requests/mine?phone=' + encodeURIComponent(phone));
+    var j = await r.json();
+    if(r.ok){ store('phone', phone); mineData = j.requests || []; msg.className = 'msg'; msg.textContent = ''; }
+    else { mineData = null; show(msg, 'err', errText(j.error, r.status)); }
+  }catch(e){ mineData = null; show(msg, 'err', tt().errGeneric); }
+  renderMine();
+}
+$('mBtn').addEventListener('click', loadMine);
+
+function rerenderLists(){ renderOpen(); renderMine(); }
+
+// ---------- تهيئة ----------
+(function init(){
+  var q = new URLSearchParams(location.search);
+  var qa = q.get('area') || '';
+  if(COORD_RE.test(qa)){ needState.coords = qa.replace(/\s/g, ''); qa = ''; geoStatus('geoFromPalm'); }
+  $('nArea').value = qa || recall('area');
+  $('nName').value = recall('name'); $('nPhone').value = recall('phone'); $('mPhone').value = recall('phone');
+  $('hPhone').value = recall('hphone'); $('oPhone').value = recall('hphone');
+  if(q.get('palm')) $('nPalm').value = q.get('palm').slice(0, 60);
+  if(q.get('severity')) $('nSev').value = q.get('severity').slice(0, 20);
+  var v = q.get('tab'); showView(v === 'help' || v === 'mine' ? v : 'need');
+  if(qa && (!v || v === 'need')) setStep(2);      // arriving from an alert with the area known: go straight to the details
+  setLang(getLang());
+  loadCount();
+  if($('mPhone').value && v === 'mine') loadMine();
+})();
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

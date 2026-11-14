@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NakhlaGuard — How to Use</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=Tajawal:wght@400;500;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14201B; --ink-soft:#4A5750; --sand:#EDE6D6; --sand-deep:#E1D8C2;
+    --palm:#1F5C4A; --palm-deep:#123A2E; --date:#B8752E; --card:#FBF9F3;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    font-family:'IBM Plex Sans',sans-serif; background:var(--sand); color:var(--ink);
+    min-height:100vh; padding:0 0 32px; line-height:1.7;
+  }
+  body.rtl{font-family:'Tajawal',sans-serif; direction:rtl}
+  body.rtl h1, body.rtl h2{font-family:'Tajawal',sans-serif}
+  h1,h2{font-family:'Space Grotesk',sans-serif}
+  .wrap{max-width:640px; margin:0 auto; padding:0 20px}
+  .back{display:inline-block; font-size:.85rem; color:var(--palm-deep); text-decoration:none; margin:14px 0}
+  h1{font-size:1.5rem; color:var(--palm-deep); margin-bottom:6px}
+  .sub{color:var(--ink-soft); font-size:.92rem; margin-bottom:24px}
+
+  .lang-bar{background:var(--ink); padding:8px 0}
+  .lang-bar .wrap{display:flex; justify-content:flex-end; padding:0 20px}
+  #langToggle{
+    position:fixed; top:14px; right:14px; z-index:1000; width:auto; margin:0;
+    background:var(--ink); border:1px solid rgba(237,230,214,.35); color:var(--sand);
+    padding:7px 16px; border-radius:20px; font-size:.78rem; cursor:pointer; font-family:inherit;
+    box-shadow:0 2px 10px rgba(0,0,0,.3);
+  }
+  #langToggle:hover{border-color:var(--sand)}
+
+  .step-card{
+    background:var(--card); border-radius:14px; padding:20px; margin-bottom:16px;
+    border-top:4px solid var(--date);
+  }
+  .step-card h2{font-size:1.1rem; margin-bottom:10px; color:var(--palm-deep); display:flex; align-items:center; gap:8px}
+  .step-card ol, .step-card ul{margin-inline-start:20px; font-size:.9rem; color:var(--ink-soft)}
+  .step-card li{margin-bottom:6px}
+  .step-card p{font-size:.9rem; color:var(--ink-soft)}
+
+  .badge-demo{display:inline-flex; align-items:center; gap:6px; margin:4px 6px 4px 0; font-size:.82rem}
+  .dot{width:12px; height:12px; border-radius:50%; display:inline-block}
+  .dot.healthy{background:#2E8B57} .dot.early{background:#D9822B}
+  .dot.moderate{background:#C1650E} .dot.advanced{background:#A63D40}
+
+  .nav-link{display:block; text-align:center; font-size:.85rem; color:var(--palm-deep); margin-top:16px}
+
+  /* ---- Urdu (اردو): Noto Nastaliq Urdu, tall line-height, RTL ---- */
+  body.lang-ur, body.lang-ur *:not(code):not(.repro){ font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic','Tajawal',serif !important }
+  body.lang-ur{ line-height:2.1 }
+  body.lang-ur h1, body.lang-ur h2, body.lang-ur h3, body.lang-ur h4{ line-height:2 }
+  body.lang-ur button, body.lang-ur input, body.lang-ur select, body.lang-ur textarea, body.lang-ur .nk-tab{ line-height:1.8 }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/index.html" class="back" data-en="← Back to overview" data-ar="← رجوع للصفحة الرئيسية" data-ur="← جائزے پر واپس">← Back to overview</a>
+  <h1 data-en="📖 How to Use NakhlaGuard" data-ar="📖 كيف تستخدم NakhlaGuard" data-ur="📖 NakhlaGuard کیسے استعمال کریں">📖 How to Use NakhlaGuard</h1>
+  <p class="sub" data-en="A quick guide to every part of the system." data-ar="دليل سريع لكل جزء من أجزاء النظام." data-ur="نظام کے ہر حصے کی مختصر رہنمائی۔">A quick guide to every part of the system.</p>
+
+  <div class="step-card">
+    <h2 data-en="🎙️ 1. Run a live test" data-ar="🎙️ 1. تجربة النموذج" data-ur="🎙️ 1. لائیو ٹیسٹ چلائیں">🎙️ 1. Run a live test</h2>
+    <ol>
+      <li data-en="Enter a Palm ID and upload a trunk audio recording (WAV)." data-ar="أدخل رقم النخلة وارفع تسجيلًا صوتيًا للجذع (WAV)." data-ur="کھجور نمبر درج کریں اور تنے کی آڈیو ریکارڈنگ (WAV) اپ لوڈ کریں۔">Enter a Palm ID and upload a trunk audio recording (WAV).</li>
+      <li data-en="Press 'Analyze now'." data-ar="اضغط «ابدأ التحليل»." data-ur="«ابھی تجزیہ کریں» دبائیں۔">Press 'Analyze now'.</li>
+      <li data-en="See the severity result — for moderate/advanced cases, tap the sections below it for a full AI treatment report." data-ar="اطّلع على نتيجة الشدة؛ وإن كانت متوسطة أو متقدمة فاضغط على الأقسام أسفلها للحصول على تقرير علاج كامل." data-ur="شدت کا نتیجہ دیکھیں — درمیانے/شدید کیسز میں، علاج کی مکمل AI رپورٹ کے لیے اس کے نیچے والے حصوں پر ٹیپ کریں۔">See the severity result — for moderate/advanced cases, tap the sections below it for a full AI treatment report.</li>
+    </ol>
+    <p style="font-size:.82rem; color:var(--ink-soft); margin-top:10px" data-en="Tip: location and age fields are optional — 'Use current' and '📷 Estimate from photo' fill them automatically." data-ar="نصيحة: حقلا الموقع والعمر اختياريان، ويمكن تعبئتهما تلقائيًا بزر «📍 استخدم موقعي» وزر «📷 قدّر من صورة»." data-ur="مشورہ: مقام اور عمر کے خانے اختیاری ہیں — «موجودہ مقام» اور «📷 تصویر سے اندازہ» انہیں خود بخود بھر دیتے ہیں۔">Tip: location and age fields are optional — 'Use current' and '📷 Estimate from photo' fill them automatically.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="🌴 2. Palm Registry" data-ar="🌴 2. سجل النخيل" data-ur="🌴 2. کھجوروں کا ریکارڈ">🌴 2. Palm Registry</h2>
+    <p data-en="Register every palm on your farm once (ID, location, age, notes). Every test you run automatically updates that palm's status here, so you can see your whole farm's health at a glance." data-ar="سجّل كل نخلة في مزرعتك مرة واحدة (الرقم والموقع والعمر والملاحظات). وكل فحص تُجريه يحدّث حالة النخلة هنا تلقائيًا، فترى صحة مزرعتك كاملة بنظرة واحدة." data-ur="اپنے فارم کی ہر کھجور کو ایک بار درج کریں (نمبر، مقام، عمر، نوٹس)۔ آپ جو بھی ٹیسٹ کرتے ہیں وہ اس کھجور کی حالت خود بخود یہاں اپ ڈیٹ کر دیتا ہے، تاکہ آپ پورے فارم کی صحت ایک نظر میں دیکھ سکیں۔">Register every palm on your farm once (ID, location, age, notes). Every test you run automatically updates that palm's status here, so you can see your whole farm's health at a glance.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="🔔 3. Farmer Alert Dashboard" data-ar="🔔 3. لوحة إشعارات المزارع" data-ur="🔔 3. کسان الرٹس ڈیش بورڈ">🔔 3. Farmer Alert Dashboard</h2>
+    <p data-en="Keep this page open (on your phone or computer) while working the farm. Tap 'Enable sound & browser notifications' once, and you'll get an instant alert the moment any palm's test comes back moderate or advanced — no need to refresh. Each alert also shows the 3D trunk with the estimated position of the vibration source." data-ar="أبقِ هذه الصفحة مفتوحة (على هاتفك أو حاسوبك) أثناء عملك في المزرعة. اضغط «فعّل الصوت وإشعارات المتصفح» مرة واحدة، وستصلك إشعارات فورية لحظة ظهور نتيجة متوسطة أو متقدمة لأي نخلة، من دون تحديث الصفحة. ويعرض كل تنبيه أيضًا الجذع ثلاثي الأبعاد مع الموضع المقدَّر لمصدر الاهتزاز." data-ur="فارم پر کام کرتے ہوئے یہ صفحہ (فون یا کمپیوٹر پر) کھلا رکھیں۔ ایک بار «آواز اور براؤزر نوٹیفکیشن فعال کریں» دبائیں، پھر جیسے ہی کسی کھجور کا ٹیسٹ درمیانہ یا شدید آئے گا، آپ کو فوری الرٹ مل جائے گا — صفحہ ریفریش کرنے کی ضرورت نہیں۔ ہر الرٹ کے ساتھ تھری ڈی تنہ بھی دکھایا جاتا ہے جس پر کمپن کے ماخذ کا تخمینی مقام ہوتا ہے۔">Keep this page open (on your phone or computer) while working the farm. Tap 'Enable sound & browser notifications' once, and you'll get an instant alert the moment any palm's test comes back moderate or advanced — no need to refresh. Each alert also shows the 3D trunk with the estimated position of the vibration source.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="📞 Backup Contact" data-ar="📞 جهة اتصال احتياطية" data-ur="📞 متبادل رابطہ">📞 Backup Contact</h2>
+    <p data-en="On the alert dashboard, set a name and phone number for someone who can act if you're unavailable (traveling, out of the country). This contact is shown automatically on every future risk alert, so urgent cases don't go unanswered." data-ar="في لوحة الإشعارات، سجّل اسم ورقم هاتف شخص يستطيع التصرف إذا كنت غير متوفر (مسافرًا أو خارج البلاد). وتظهر جهة الاتصال هذه تلقائيًا مع كل تنبيه خطر لاحق، حتى لا تبقى الحالات العاجلة بلا ردّ." data-ur="الرٹس ڈیش بورڈ پر ایک ایسے شخص کا نام اور فون نمبر درج کریں جو آپ کی عدم موجودگی (سفر یا ملک سے باہر ہونے) میں کارروائی کر سکے۔ یہ رابطہ ہر آئندہ خطرے کے الرٹ پر خود بخود دکھایا جاتا ہے، تاکہ ہنگامی کیسز بغیر جواب کے نہ رہ جائیں۔">On the alert dashboard, set a name and phone number for someone who can act if you're unavailable (traveling, out of the country). This contact is shown automatically on every future risk alert, so urgent cases don't go unanswered.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="🧑‍🌾 Not on the farm? Request a farmer" data-ar="🧑‍🌾 لست في المزرعة؟ اطلب مزارعًا" data-ur="🧑‍🌾 باغ میں نہیں ہیں؟ کسان کی درخواست کریں">🧑‍🌾 Not on the farm? Request a farmer</h2>
+    <p data-en="If an alert reaches you while you are away from the farm, tap “Request a farmer” on the alert card (or under the check result). Enter the area, then say when you need him and what for. Your request goes to farmers and workers registered in your area; when one accepts, his name and number appear under “My requests”. A farmer or worker can register himself from the same page. This is a prototype: only people who registered are counted, and a helper in your area is not guaranteed." data-ar="إذا وصلك تنبيه وأنت بعيد عن المزرعة، فاضغط «اطلب مزارعًا» في بطاقة التنبيه (أو أسفل نتيجة الفحص). اكتب المنطقة، ثم حدّد متى تحتاجه ولأي غرض. يصل طلبك إلى المزارعين والعمال المسجّلين في منطقتك، وإذا قبل أحدهم الطلب يظهر اسمه ورقمه في «طلباتي». ويمكن لأي مزارع أو عامل أن يسجّل نفسه من الصفحة نفسها. هذا نموذج أولي: لا يُحسب إلا من سجّل نفسه، ولا يُضمن وجود مساعد في منطقتك." data-ur="اگر آپ باغ سے دور ہوں اور الرٹ پہنچے تو الرٹ کارڈ پر (یا جانچ کے نتیجے کے نیچے) «کسان کی درخواست» دبائیں۔ علاقہ لکھیں، پھر بتائیں کہ کب اور کس کام کے لیے چاہیے۔ آپ کی درخواست آپ کے علاقے کے رجسٹرڈ کسانوں اور مزدوروں تک پہنچتی ہے؛ کوئی قبول کر لے تو اس کا نام اور نمبر «میری درخواستیں» میں نظر آتا ہے۔ کوئی بھی کسان یا مزدور اسی صفحے سے خود کو رجسٹر کر سکتا ہے۔ یہ ابتدائی نمونہ ہے: صرف رجسٹر ہونے والے گنے جاتے ہیں، اور آپ کے علاقے میں مددگار کی ضمانت نہیں۔">If an alert reaches you while you are away from the farm, tap “Request a farmer” on the alert card (or under the check result). Enter the area, then say when you need him and what for. Your request goes to farmers and workers registered in your area; when one accepts, his name and number appear under “My requests”. A farmer or worker can register himself from the same page. This is a prototype: only people who registered are counted, and a helper in your area is not guaranteed.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="🤖 4. AI Farm Assistant" data-ar="🤖 4. مساعد المزرعة الذكي" data-ur="🤖 4. AI فارم اسسٹنٹ">🤖 4. AI Farm Assistant</h2>
+    <p data-en="Ask it anything in plain language: 'Which palms need attention?', 'How old is Palm-A12?', or general questions about Red Palm Weevil. It looks up your real farm data on its own before answering." data-ar="اسأله أي سؤال بلغة عادية، مثل: «أي نخيل تحتاج إلى عناية؟» أو «كم عمر Palm-A12؟»، أو أسئلة عامة عن سوسة النخيل. وهو يبحث في بيانات مزرعتك الحقيقية بنفسه قبل أن يجيب." data-ur="اس سے عام زبان میں کچھ بھی پوچھیں: «کن کھجوروں کو توجہ چاہیے؟»، «Palm-A12 کی عمر کیا ہے؟»، یا ریڈ پام ویول کے بارے میں عمومی سوالات۔ جواب دینے سے پہلے یہ آپ کے فارم کا اصل ڈیٹا خود دیکھتا ہے۔">Ask it anything in plain language: 'Which palms need attention?', 'How old is Palm-A12?', or general questions about Red Palm Weevil. It looks up your real farm data on its own before answering.</p>
+  </div>
+
+  <div class="step-card">
+    <h2 data-en="🎨 Understanding the risk colors" data-ar="🎨 فهم ألوان الخطورة" data-ur="🎨 خطرے کے رنگوں کو سمجھیں">🎨 Understanding the risk colors</h2>
+    <p style="margin-bottom:10px" data-en="Every result across the app uses the same color code:" data-ar="تستخدم كل نتيجة في التطبيق نظام الألوان نفسه:" data-ur="ایپ میں ہر نتیجہ ایک ہی رنگوں کا نظام استعمال کرتا ہے:">Every result across the app uses the same color code:</p>
+    <div class="badge-demo"><span class="dot healthy"></span><span data-en="Green = Healthy" data-ar="أخضر = سليم" data-ur="سبز = صحت مند">Green = Healthy</span></div>
+    <div class="badge-demo"><span class="dot early"></span><span data-en="Amber = Early stage" data-ar="عنبري = إصابة مبكرة" data-ur="عنبری (زرد نارنجی) = ابتدائی مرحلہ">Amber = Early stage</span></div>
+    <div class="badge-demo"><span class="dot moderate"></span><span data-en="Orange = Moderate" data-ar="برتقالي غامق = متوسطة" data-ur="نارنجی = درمیانہ">Orange = Moderate</span></div>
+    <div class="badge-demo"><span class="dot advanced"></span><span data-en="Red = Advanced" data-ar="أحمر = متقدمة" data-ur="سرخ = شدید">Red = Advanced</span></div>
+  </div>
+
+  <a href="/test.html" class="nav-link" data-en="Run a live test →" data-ar="تجربة النموذج ←" data-ur="لائیو ٹیسٹ چلائیں ←">Run a live test →</a>
+</div>
+
+<script>
+// ---------- تبديل اللغة (عربي / English / اردو) - مشترك عبر كل صفحات الموقع ----------
+var LANG_CYCLE = ['ar', 'en', 'ur'];
+var LANG_BTN_LABEL = { ar: 'English', en: 'اردو', ur: 'العربية' };
+var LOCALES = { ar: 'ar-SA', en: 'en-US', ur: 'ur-PK' };
+function getLang(){ let l = null; try{ l = localStorage.getItem('nakhlaguard-lang'); }catch(e){} return (l === 'ar' || l === 'en' || l === 'ur') ? l : 'ar'; }   // لا يعتمد على ثوابت معرَّفة لاحقًا، لأن بعض الصفحات تناديه قبل نهاية السكربت
+function setLang(lang){
+  if(!LANG_CYCLE.includes(lang)) lang = 'ar';
+  try{ localStorage.setItem('nakhlaguard-lang', lang); }catch(e){}
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
+  document.body.classList.toggle('rtl', lang !== 'en');
+  document.body.classList.toggle('lang-ur', lang === 'ur');
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.innerHTML = el.getAttribute('data-' + lang) ?? el.getAttribute('data-en');
+  });
+  document.querySelectorAll('[data-en-ph]').forEach(el => {
+    el.placeholder = el.getAttribute('data-' + lang + '-ph') ?? el.getAttribute('data-en-ph');
+  });
+  const btn = document.getElementById('langToggle');
+  if(btn) btn.textContent = LANG_BTN_LABEL[lang];
+}
+function toggleLang(){ setLang(LANG_CYCLE[(LANG_CYCLE.indexOf(getLang()) + 1) % LANG_CYCLE.length]); }
+setLang(getLang());
+</script>
+<button id="langToggle" onclick="toggleLang()">العربية</button>
+<script src="/nav.js" defer></script>
+</body>
+</html>

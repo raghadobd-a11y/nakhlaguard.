@@ -34,8 +34,24 @@ async def _attempt_model(client, model_name, payload, headers, max_retries, base
     for attempt in range(max_retries):
         try:
             resp = await client.post(url, json=payload, headers=headers)
+            used_param = False
+            if resp.status_code == 401:
+                # بعض أنواع المفاتيح (مثل التي تبدأ بـ AQ.) تُقبل كمعامل في الرابط ولا تُقبل كترويسة: نجرّب الطريقة الثانية
+                key = headers.get("x-goog-api-key")
+                resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"}, params={"key": key})
+                used_param = True
+                if resp.status_code == 401:
+                    raise RuntimeError("401 Unauthorized: Google rejected the API key (tried it as a header and as a URL parameter)")
+            if used_param and resp.status_code >= 400:
+                # لا نمرّر الخطأ الأصلي لأن رسالته تحتوي الرابط وفيه المفتاح
+                raise httpx.HTTPStatusError(f"{resp.status_code} from Gemini (key sent as URL parameter)", request=resp.request, response=resp)
             resp.raise_for_status()
             return resp.json(), None
+        except httpx.TimeoutException as e:
+            # ما رد النموذج بالوقت المحدد (ReadTimeout وأخواتها): ما نعيد على نفس النموذج، ننتقل فورًا للتالي
+            print(f"[NakhlaGuard] {model_name} -> timeout ({type(e).__name__}), trying next model")
+            last_error = e
+            break
         except httpx.HTTPStatusError as e:
             status = e.response.status_code if e.response is not None else None
             if status == 401:
@@ -61,7 +77,7 @@ async def call_gemini(payload, api_key, models=None, max_retries=2, base_delay=1
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     last_error = None
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(40.0, connect=10.0)) as client:
         for model_name in models:
             data, error = await _attempt_model(client, model_name, payload, headers, max_retries, base_delay)
             if data is not None:
