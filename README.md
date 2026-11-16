@@ -10,6 +10,10 @@ folder-upload issues.
 
 ## Quick start
 
+**Windows, one step:** in the project folder run `.\start_local.bat` (or double-click it). It installs missing packages, trains the model if needed, asks for the Gemini key (typed hidden, never saved to a file), opens the private pages on this laptop only (`NAKHLA_OWNER_GATE=off`), starts the server and opens `http://localhost:8000/`. The window stays busy while the server runs (that is normal); Ctrl+C stops it. It stops with a message if an older server is still using port 8000. Do not use it on Render.
+
+Manual steps:
+
 ```bash
 pip install -r requirements.txt --break-system-packages
 
@@ -43,11 +47,19 @@ generate_synthetic_data.py # Simulated training audio generator
 fusion.py                  # Audio+image fusion + Gemini recommendation/report
 agent.py                   # Agentic AI: tool-calling loop over farm data
 gemini_client.py           # Shared Gemini client with retry + model fallback
+acoustic_check.py          # Pulse-evidence check (band-pass, envelope, short repeated pulses); can only LOWER an alarm
+demo_audio.py              # Public try page: runs the model on 5 s windows of a clip up to 15 s, then the pulse check
+demo_report.py             # Public try page: structured report (headline, today, 4 weekly steps, when to call an expert); ready-made fallback
+make_weevil_sound.py       # Writes the 3 test sounds in demo_wavs/ (dense pulses, sparse pulses, air only)
 severity_labels.py         # Arabic->English label translation for AI output
 serial_bridge.py           # PC-side bridge for the Arduino Uno version
 nakhla_sensor.ino           # ESP32 + WiFi version of the sensor firmware
 nakhla_sensor_uno.ino       # Arduino Uno + USB serial version
-index.html / test.html / dashboard.html / palms.html / agent.html / farmers.html
+index.html / try.html / evidence.html / owner.html / farmers-join.html   # public site
+test.html / dashboard.html / palms.html / palm.html / agent.html / farmers.html / locate.html   # owner site (needs a device key)
+admin.html                 # farmer review page (needs NAKHLA_ADMIN_KEY)
+owner_gate.py              # the key gate (cookie, X-Nakhla-Key header, WebSocket)
+make_owner_qr.py           # makes a device key and the printable QR image
 requirements.txt
 ```
 
@@ -56,21 +68,16 @@ requirements.txt
 - Build Command: `pip install -r requirements.txt && python train_model.py`
 - Start Command: `python app.py`
 - Environment variable: `GEMINI_API_KEY` = your key
+- Environment variable: `NAKHLA_DEVICE_KEYS` = one secret key per device box, separated by commas (16+ characters each). Make them with `python make_owner_qr.py` (see "Owner site" below).
+- Environment variable: `NAKHLA_ADMIN_KEY` = a secret (16+ characters) that opens the farmer-review page. Without it the review page stays locked.
 
-## Why this design? (originality points)
+## What the design is built around
 
-| Element | Published research (KAUST, Prince Sultan University...) | NakhlaGuard |
-|---|---|---|
-| Sensor | Distributed fiber-optic sensing — expensive, specialist install | Low-cost sound sensor + microcontroller, self-installed |
-| Output | Binary classification (infested/healthy) as an academic result | 4 severity stages → a practical, graded decision |
-| Modality | Audio only | Audio + image fusion for higher confidence |
-| After detection | Stops at classification | Treatment plan + economic estimate + live alert |
-| Interaction | One-shot reading | Agentic AI assistant that queries the farm data itself |
-
-**Important for the presentation**: mention explicitly that you reviewed the
-published KAUST and Prince Sultan University research in this area, and that
-NakhlaGuard's contribution is turning that research (accurate but expensive)
-into a cheap, field-usable tool the farmer can operate themselves.
+- A low-cost contact sound sensor and a microcontroller, installed by the farmer himself.
+- Four severity stages (healthy, early, moderate, advanced) instead of only infested / healthy.
+- Audio analysis plus an optional photo of the palm.
+- After a result: a treatment plan, an estimate of the harvest impact and a live alert.
+- An assistant that looks up the farm's own data before it answers.
 
 ## What the platform includes
 
@@ -126,13 +133,21 @@ recordings come from Crete with a drill-bit / waveguide sensor, not our surface 
 ## Demo recordings
 
 `python make_demo_wavs.py` writes `demo_wavs/1_healthy.wav ... 4_advanced.wav` (simulated, one per stage; clearest correctly classified clip out of 60 tries)
-and prints the answer YOUR trained model gives for each. Say "simulated test recording" when presenting them.
+and prints the answer YOUR trained model gives for each. Say "simulated test recording" when presenting them. Every non-healthy sample must now also pass the pulse check (at least 3 pulses), so the page never shows an infested sample that its own pulse check would veto.
+
+`python make_weevil_sound.py` writes three extra files for trying the microphone in front of judges: `weevil_dense_sim.wav` (many short pulses, should read as infested), `weevil_sparse_sim.wav` (few pulses, should read as infested), `air_noise_sim.wav` (air only, should read "no sign"). They are simulated, not a real weevil. Play them from a phone near the laptop microphone (5 to 10 cm, volume high, quiet room) and record 10 to 12 seconds; results can vary with the speaker and the room. They are also on the Try page (play and download buttons) and are served from `/demo-wav/`.
 
 ## If the report shows the fallback text instead of Gemini
+
+Quick check: open `/health` on the site (or `http://localhost:8000/health`). `"gemini_key_set": false` means the server did not receive `GEMINI_API_KEY` (set it in the same PowerShell window before `python app.py`, or in Render > Environment). It shows only true/false, never the key.
+
 
 The page prints "could not reach Gemini" and a canned recommendation when every Gemini attempt fails. `gemini_client.py` now moves to the next model after a timeout
 (40 s) instead of giving up. Run `python test_gemini.py` in the same PowerShell window where `GEMINI_API_KEY` is set: it checks the key, the network, the models
 available to your key and the response time of each one. The server terminal also prints a line starting with `[NakhlaGuard] Gemini call failed:` with the real reason.
+
+**It never hangs.** One Gemini request waits at most 35 seconds in total (20 seconds per attempt), across the retries and the backup models in `gemini_client.py`. After that the page shows the ready-written fallback text instead of waiting. Change it with the environment variables `GEMINI_TOTAL_DEADLINE` and `GEMINI_REQUEST_TIMEOUT` (seconds). Every request also carries a wording rule so the AI says "palm" and never "tree".
+For the exhibition: use a key made only for it, set a quota or budget limit for that key in Google AI Studio / Cloud, and keep the key only in the Render environment (never in the code or the repo).
 
 ## Training a real-data detector (TreeVibes)
 
@@ -215,23 +230,41 @@ Where the acoustic point comes from: the bridge (`pc/nakhla_bridge.py` in the Ar
 
 **3D position at inspection and in alerts.** After every check (test.html) and inside every alert card (dashboard.html) the 3D trunk is shown automatically with the estimated vibration-source point (`locate.html?embed=1&view=3d`). With sensors connected the point comes from `sensor_location.py` and is labelled "live, not calibrated" or "calibrated, ± error". With NO sensor levels in the request (for example a sample recording at the exhibition) and a result other than healthy, the server adds a SIMULATED point (`demo_location()`, same palm gives the same point) marked `mode: "demo"`; the page shows a red "demonstration, not a measurement" note. It is never stored as a sensor reading. Set `$env:NAKHLA_DEMO_LOCATION="0"` to switch the simulated point off for real use. The point is the vibration source on the panel, not a confirmed larva position (claim N7 in the register).
 
-**The device is visible in the site.** The home page has a "The device" section (sensors -> Arduino Nano -> bridge -> website, what each part does, prototype status). `test.html` has a "From the device" card and `dashboard.html` a status line, both fed by `GET /device/status`: the last reading that arrived with `sensor_rms`, i.e. from `nakhla_bridge.py` (kept in memory, cleared when the server restarts). The older `serial_bridge.py` does not send `sensor_rms`, so it does not light up that line; use `nakhla_bridge.py` (add `--demo` to try it without hardware).
+**The device is visible in the site.** The home page has a "The device" section (sensors -> Arduino board -> bridge -> website, what each part does, prototype status). `test.html` has a "From the device" card and `dashboard.html` a status line, both fed by `GET /device/status`: the last reading that arrived with `sensor_rms`, i.e. from `nakhla_bridge.py` (kept in memory, cleared when the server restarts). The older `serial_bridge.py` does not send `sensor_rms`, so it does not light up that line; use `nakhla_bridge.py` (add `--demo` to try it without hardware).
 
 Honest limits: simulation-tested only; without `sensor_calibration.json` ({"alpha": ..., "gains": [..3..], "error_cm": ...}) the position is marked "not calibrated, accuracy unknown";
 the calibration made in the browser page is not shared with the server yet.
 
-**Farmers network (`farmers.html`): request a farmer when you are away.** An owner who is not in the area opens an alert card (or the check result) and taps "Request a farmer"; the request is two steps: (1) the area, typed by the owner (free text, so it stays general; an optional "add my exact location" button attaches GPS coordinates, which cannot be turned into an area name without an outside map service), then (2) when he needs the helper (today / within 3 days / within a week / any time) and what for (inspect / treat or spray / remove an infested palm / other), plus optional palm, notes, his name and number. It is stored in `visit_requests` (columns `when_needed`, `purpose`, `coords` are added to an older `nakhla.db` automatically). Farmers or workers register themselves (`helpers` table); a registered helper enters his number to see open requests and accepts one, and only then does the owner see the helper's name and number under "My requests". The home page shows the real number of registered helpers (`GET /helpers/count`); it starts at ZERO and counts only real registrations, nothing is pre-filled.
-Endpoints: `POST /helpers`, `GET /helpers/count`, `GET /helpers` (public list without phones), `POST /visit-requests`, `GET /visit-requests?phone=` (registered helpers only), `POST /visit-requests/{id}/accept`, `GET /visit-requests/mine?phone=`. The POSTs share the per-visitor rate limit; at most 5 open requests per phone.
-Honest limits (claim N8): prototype; a phone number is the only "login", numbers (and the optional coordinates) are stored as plain text in `nakhla.db`, nobody's identity is verified, and nothing guarantees a helper in an area or how fast he responds. For the exhibition register only real, willing people (yourself, family, visitors who agree) or test numbers, and say it is a prototype.
+**Farmers network (`farmers.html`, owner site): request a licensed farmer when you are away.** The owner opens the Farmers tab (or taps "Request a farmer" on an alert card or check result, which pre-fills palm, severity and area), filters the approved farmers by the problem (inspection, treatment, removal, pruning, general care) and area, and sends a visit request to the one he chooses: his name and number, the place, what for (inspect / treat / remove / other), when (today / 3 days / week / any time) and optional palm and notes. It is stored in `visit_requests` with status `sent` and the chosen `helper_id`. The farmer's name and number then show on the owner's screen with Call and WhatsApp buttons, and under "My visit requests" (found by the owner's phone number). Farmers join only through `farmers-join.html` and the manual review described above.
+Endpoints: `POST /farmers/apply` (public), `GET /admin/applications` and `POST /admin/applications/{id}/decision` (admin key), `GET /helpers` (approved farmers, no phones, filters `area` and `expertise`), `GET /helpers/count`, `POST /visit-requests` (needs `target_helper_id`), `GET /visit-requests/mine?phone=`. `POST /helpers` is closed (410). The POSTs share the per-visitor rate limit; at most 5 requests per phone per day.
+Honest limits (claim N8): prototype; the license review is manual and not connected to any government platform; a phone number is the only "login" for "My visit requests"; phone numbers and license numbers are stored as plain text in `nakhla.db`; nothing guarantees an approved farmer in an area or how fast he responds, and the farmer has no inbox on the site yet (the owner contacts him directly). Approve only people whose license you checked yourself, and say it is a prototype.
 
-## Open demo for visitors (booth mode)
+## Two sites: public site and private owner site
 
-- One navigation for every page (`nav.js`): top bar with the brand and the language button, bottom tab bar (Home, Check, My palms, Alerts, Farmers, Assistant). Arabic is the default language.
-- `test.html` is three steps (palm, recording, analysis). Four ready sample recordings (`demo_wavs/`, simulated, labelled as such) let a visitor try it with one tap (`GET /demo-wav/<name>`).
-  The result starts with a large verdict banner and one plain sentence of advice (always worded as a suspicion), then the details, the trunk map and the camera.
-- Because anyone can open it, `app.py` limits abuse: 20 analysis requests per visitor per minute and 150 for the whole site (`NAKHLA_RATE_MAX`, `NAKHLA_RATE_GLOBAL`), and audio files above 6 MB are refused.
-  This protects the Gemini quota behind your key; also set a quota or budget limit for that key in Google AI Studio / Cloud, use a key made only for the exhibition and delete it afterwards.
-- The assistant and the palm pages read the database: for a public demo register only demo palms, never real farmers' data.
+**Public (no key):** `index.html` (what the device is, what it gives you including the AI analysis and instant alerts, how it works, an "Agentic AI" section explaining the assistant (`agent.py`, five read-only tools; the live assistant is `agent.html`, owner site only), how to place the device on the palm, prototype status and roadmap; no collapsed sections), `evidence.html` (opens with a plain-language summary; the full claim list with recompute commands is below it), `farmers-join.html` (a farmer applies), `owner.html` (explains the QR code and takes a typed key), and `try.html` (the "Try" tab, see below). Nothing here shows anyone's data. The home page opens with a "Try it yourself" section with two live boxes (both in `demo_agent.py`). **Try the device** (`POST /demo/sample`): the visitor picks one of the four ready simulated recordings in `demo_wavs/` and the local scikit-learn model classifies it; no Gemini and no key needed, and it is labelled as simulated. **Try the Agentic AI assistant** (`POST /demo/agent`): it runs the same tool-calling agent loop with Gemini, but on a built-in sample farm of 5 made-up palms, with caps so the public cannot drain your Gemini quota (8 questions per visitor per hour, 300 per day for the whole site, 300 characters per question). Settings: `NAKHLA_PUBLIC_DEMO=off` switches it off, `NAKHLA_DEMO_IP_HOURLY`, `NAKHLA_DEMO_DAILY` change the caps. It needs `GEMINI_API_KEY` like the real assistant.
+
+**The "Try" page (`try.html`, public, a tab next to "Owner").** A visitor can upload a recording, record with the microphone (up to 15 seconds, with a stop button and a progress bar; the first 0.4 s is dropped so the click of the button is not heard), or pick one of the four ready simulated recordings or three test sounds. The browser decodes any audio format, keeps up to 15 seconds (the loudest part if the file is longer), resamples to 4000 Hz mono 16-bit and sends a small WAV (about 120 KB at most) to `POST /demo/analyze` (local model only, nothing stored, no Gemini). **Two steps** (`demo_audio.py`): (1) the model classifies each 5 s window (step 2.5 s) and the window with the most pulses wins; (2) the pulse check (`acoustic_check.py`: 150 to 1800 Hz band-pass, 200 Hz envelope, rolling 1 s floor, peaks at least 6x the floor, at least 45 ms apart, at most 80 ms wide, at least `max(2, 0.2 x seconds)` pulses, not more than 35% of the time active) can only LOWER a non-healthy verdict to "no sign" when no pulses are heard (so air, a fan or speech no longer read as infested); it never raises a result. The page draws red marks on the waveform where pulses were heard and explains a lowered verdict in words. Claim N9 states the limit: the check was tested only on synthetic distractor sounds, not on field recordings. The page then shows the four probabilities, a risk gauge, a 3D trunk (`locate.html?embed=1&view=3d`, with a SIMULATED point marked `mode: "demo"`) and a button "Write the report" (`POST /demo/report`, same per-visitor and daily caps as the public assistant; `NAKHLA_PUBLIC_DEMO=off` switches all public demos off). **The report** shows only headings, each with a button that opens its text: what to do today, a four-week plan (one heading per week with a focus line), and when to call an expert, plus an "open all" link. The AI (named "Haris" / «حارس» in the site; Gemini underneath) fills a fixed JSON; the page escapes everything. With no key, or if the AI fails or returns junk, a ready-made report is shown and labelled "ready-made version" (never presented as AI). The report is general guidance with no doses or product names. Language: Arabic, English, Urdu. The page says plainly that the model was trained on simulated recordings and has not been tested on real palms. In `owner_gate.py` the public additions are `/try.html`, `/demo/analyze`, `/demo/report`, `/demo-wav/` (only the 7 listed files), and `/locate.html` only when the query has `embed=1`; every other owner page stays locked.
+
+**Owner site (needs a device key):** `test.html`, `palms.html`, `palm.html`, `dashboard.html`, `farmers.html` (choose a farmer), `agent.html`, `locate.html`, `instructions.html`, every API (`/predict-full`, `/palms`, ...) and the `/ws/alerts` WebSocket. Without a valid key a page redirects to `owner.html` and an API answers 401. The logic is in `owner_gate.py`.
+
+- The QR code on the device box holds `https://<your-site>/o/<device-key>`. Opening it stores an HttpOnly cookie (the cookie holds a hash, not the key) and lands on `test.html`.
+- Make a key and its printable QR image: `python make_owner_qr.py --base-url https://<your-site>.onrender.com` (one key per box; add all keys to `NAKHLA_DEVICE_KEYS`). Keep the keys private: not on GitHub, not in a posted photo.
+- If `NAKHLA_DEVICE_KEYS` is empty the server makes a random key for that run and prints `/o/<key>` in the log, so the owner site is never left open by mistake.
+- The Arduino bridge sends the same key in the `X-Nakhla-Key` header: `set NAKHLA_KEY=<key>` (or `--key <key>` for `arduino_updated/nakhla_bridge.py`) before starting it. `NAKHLA_SERVER_URL` sets the server for `serial_bridge.py`.
+- For local testing only: `NAKHLA_OWNER_GATE=off` opens the owner site (not the same variable as `NAKHLA_GATE`, which is the noise filter in `predict.py`).
+- All keys see the same database for now (one deployment = one farm). Separate data per device is a future step.
+
+### Verified farmers
+- A farmer applies at `farmers-join.html` with a license type and number (for example an agricultural activity license issued through the Nama platform) and chooses expertise tags: inspection, treatment, removal, pruning, general care.
+- You review each application at `/a/<NAKHLA_ADMIN_KEY>` (opens `admin.html`): open the license document, match name, number and expiry, then approve, reject, or later revoke. The review is manual. The site is not connected to Absher, Nama or GOV.SA, and must not claim it is.
+- Only approved farmers appear on `farmers.html`, with their expertise and no phone number. The owner picks the farmer that fits the problem and sends a visit request; the farmer's phone then appears with Call and WhatsApp buttons. The farmer has no inbox in the site (a future step); the old self-registration (`POST /helpers`) is closed (410).
+- Self-registered helpers from the old version stay in the database but are unverified, so nobody sees them.
+
+### Exhibition (24 Nov) in this mode
+- Print the QR for the demo device box and open it on your own phone or laptop in front of the judges: that is the owner site. Keep the key off the poster and off screenshots you publish.
+- The rate limits still apply (`NAKHLA_RATE_MAX`, `NAKHLA_RATE_GLOBAL`; audio above 6 MB refused) and protect the Gemini quota. Use a key made only for the exhibition, set a quota for it in Google AI Studio / Cloud, and delete it afterwards.
+- The assistant and the palm pages read the database: register only demo palms.
+- Installation video: put a file named `install.mp4` next to `app.py`; the home page then shows it instead of the placeholder.
 
 ## Evidence and verification (nothing "from my head")
 

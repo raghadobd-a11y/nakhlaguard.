@@ -15,12 +15,36 @@ Gemini أحيانًا يرجع:
 نموذج، فنرميه فورًا بدون إضاعة وقت بتجربة نماذج إضافية.
 """
 import asyncio
+import time
 import httpx
 
 # نموذج أساسي جديد وقوي، ثم بديلان أقدم وأخف لو الأول مزدحم
 FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"]
 
 TRANSIENT_STATUS_CODES = {429, 503}
+
+# حدود الانتظار: حتى لو Gemini بطيء أو محجوب، لا يعلّق الموقع. أطول انتظار كلي للطلب الواحد (بكل المحاولات
+# والنماذج الاحتياطية) هو TOTAL_DEADLINE، وبعده يرجع الخطأ فيعرض الموقع النص البديل المكتوب سلفًا بدل الانتظار.
+# للتعديل من غير تغيير الكود: متغيرات البيئة GEMINI_TOTAL_DEADLINE و GEMINI_REQUEST_TIMEOUT (بالثواني).
+import os
+TOTAL_DEADLINE = float(os.environ.get("GEMINI_TOTAL_DEADLINE", "35"))
+REQUEST_TIMEOUT = float(os.environ.get("GEMINI_REQUEST_TIMEOUT", "20"))
+
+# قاعدة صياغة تُضاف لكل طلب: نقول "نخلة" ولا نقول "شجرة" أبدًا
+WORDING_RULE = ("Wording rule for every answer, in every language: always say 'palm' and never 'tree'. "
+                "In Arabic write نخلة / نخيل / نخلات and never شجرة / أشجار. "
+                "In Urdu write کھجور and never درخت. In English write 'palm' and never 'tree'.")
+
+
+def _with_wording_rule(payload):
+    """نسخة سطحية من الطلب مع إضافة قاعدة الصياغة لتعليمات النظام (بدون نسخ الصور الكبيرة)."""
+    out = dict(payload)
+    si = dict(out.get("system_instruction") or {})
+    parts = list(si.get("parts") or [])
+    parts.append({"text": WORDING_RULE})
+    si["parts"] = parts
+    out["system_instruction"] = si
+    return out
 
 
 async def _attempt_model(client, model_name, payload, headers, max_retries, base_delay):
@@ -76,13 +100,24 @@ async def call_gemini(payload, api_key, models=None, max_retries=2, base_delay=1
     models = models or FALLBACK_MODELS
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     last_error = None
+    payload = _with_wording_rule(payload)
+    deadline = time.monotonic() + TOTAL_DEADLINE
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(40.0, connect=10.0)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(REQUEST_TIMEOUT, connect=8.0)) as client:
         for model_name in models:
-            data, error = await _attempt_model(client, model_name, payload, headers, max_retries, base_delay)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                data, error = await asyncio.wait_for(
+                    _attempt_model(client, model_name, payload, headers, max_retries, base_delay), timeout=remaining)
+            except asyncio.TimeoutError:
+                print(f"[NakhlaGuard] total deadline ({TOTAL_DEADLINE:.0f}s) reached on {model_name}")
+                last_error = asyncio.TimeoutError(f"Gemini did not answer within {TOTAL_DEADLINE:.0f}s")
+                break
             if data is not None:
                 return data
             print(f"[NakhlaGuard] {model_name} exhausted - trying next fallback model")
             last_error = error
 
-    raise last_error
+    raise last_error or asyncio.TimeoutError(f"Gemini did not answer within {TOTAL_DEADLINE:.0f}s")

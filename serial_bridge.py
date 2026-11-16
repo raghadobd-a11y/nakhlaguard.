@@ -14,6 +14,7 @@
 اضغطي زر الفحص المتصل بـ Arduino (أو اكتبي R بالمنفذ التسلسلي)
 لبدء تسجيل جديد.
 """
+import os
 import sys
 import time
 import numpy as np
@@ -23,7 +24,9 @@ from scipy.io import wavfile
 
 SAMPLE_RATE = 4000  # يجب أن يطابق SAMPLE_RATE بملف الأردوينو وfeatures.py
 BAUD = 250000       # يجب أن يطابق Serial.begin بملف الأردوينو
-SERVER_URL = "http://localhost:8000/predict-full"
+SERVER_URL = os.environ.get("NAKHLA_SERVER_URL", "http://localhost:8000").rstrip("/") + "/predict-full"
+# مفتاح الجهاز (نفس المفتاح داخل الباركود): الموقع لا يقبل قراءات الجهاز بدونه. ضعه بمتغير البيئة NAKHLA_KEY
+DEVICE_KEY = os.environ.get("NAKHLA_KEY", "")
 DEFAULT_PALM_ID = "Palm-A12"  # يستخدم بس لو ضغطتِ Enter بدون كتابة رقم جديد
 
 
@@ -76,7 +79,8 @@ def send_to_server(wav_path, palm_id):
     with open(wav_path, "rb") as f:
         files = {"audio": ("recording.wav", f, "audio/wav")}
         data = {"palm_id": palm_id}
-        resp = requests.post(SERVER_URL, files=files, data=data, timeout=30)
+        resp = requests.post(SERVER_URL, files=files, data=data, timeout=30,
+                             headers={"X-Nakhla-Key": DEVICE_KEY} if DEVICE_KEY else None)
     resp.raise_for_status()
     return resp.json()
 

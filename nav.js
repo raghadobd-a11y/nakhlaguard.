@@ -5,14 +5,25 @@
   if (new URLSearchParams(location.search).get("embed") === "1") return;
   var me = document.currentScript, tabsOnly = !!(me && me.dataset && me.dataset.mode === "tabs");
   var path = location.pathname.replace(/\/+$/, "") || "/";
-  var TABS = [
+  // موقعان: العام (رئيسية، جرّب، أدلة، تقديم المزارعين، دخول المالك) وموقع المالك الخاص (يُفتح بباركود الجهاز).
+  var PUBLIC_PATHS = ["/", "/index.html", "/owner.html", "/try.html", "/evidence.html", "/farmers-join.html", "/verification_report.html"];
+  var isPublic = PUBLIC_PATHS.indexOf(path) >= 0;
+  var PUBLIC_TABS = [
     { href: "/index.html", match: ["/", "/index.html"], icon: "🏠", t: { en: "Home", ar: "الرئيسية", ur: "ہوم" } },
+    { href: "/farmers-join.html", match: ["/farmers-join.html"], icon: "🧑‍🌾", t: { en: "Farmers", ar: "للمزارعين", ur: "کسان" } },
+    { href: "/evidence.html", match: ["/evidence.html", "/verification_report.html"], icon: "📚", t: { en: "Evidence", ar: "الأدلة", ur: "ثبوت" } },
+    { href: "/try.html", match: ["/try.html"], icon: "🎙️", t: { en: "Try", ar: "جرّب", ur: "آزمائیں" } },
+    { href: "/owner.html", match: ["/owner.html"], icon: "🔑", t: { en: "Owner", ar: "المالك", ur: "مالک" } }
+  ];
+  var OWNER_TABS = [
     { href: "/test.html", match: ["/test.html"], icon: "🎙️", t: { en: "Check", ar: "افحص", ur: "جانچ" } },
     { href: "/palms.html", match: ["/palms.html", "/palm.html"], icon: "🌴", t: { en: "My palms", ar: "نخيلي", ur: "میری کھجوریں" } },
     { href: "/dashboard.html", match: ["/dashboard.html"], icon: "🔔", t: { en: "Alerts", ar: "التنبيهات", ur: "الرٹس" } },
     { href: "/farmers.html", match: ["/farmers.html"], icon: "🧑‍🌾", t: { en: "Farmers", ar: "المزارعون", ur: "کسان" } },
     { href: "/agent.html", match: ["/agent.html"], icon: "🤖", t: { en: "Assistant", ar: "المساعد", ur: "معاون" } }
   ];
+  var TABS = isPublic ? PUBLIC_TABS : OWNER_TABS;
+
   var css = document.createElement("style");
   css.textContent =
     "body{padding-bottom:96px !important}" +

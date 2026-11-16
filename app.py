@@ -27,6 +27,7 @@
 """
 import os
 import json
+import hashlib
 import tempfile
 import time
 import collections
@@ -34,17 +35,21 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # كل الملفات بنفس مجلد app.py، فـ Python يضيف هذا المجلد لمسار
 # البحث تلقائيًا - ما نحتاج أي sys.path.append إضافي
-from predict import predict_severity_from_file  # noqa: E402
+from predict import predict_severity_from_file, predict_severity_from_array, load_audio_any  # noqa: E402
 from fusion import fuse_audio_image, get_gemini_recommendation, estimate_age_and_health_from_image  # noqa: E402
 from agent import run_agent  # noqa: E402
+import demo_agent  # noqa: E402
+import demo_audio  # noqa: E402
+import demo_report  # noqa: E402
 from locate import locate_signs_from_image  # noqa: E402
 from sensor_location import locate_from_json, save_latest, get_latest, demo_location  # noqa: E402
+from owner_gate import OwnerGate  # noqa: E402
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "nakhla.db")
@@ -57,7 +62,7 @@ app.add_middleware(
 # ---- حماية بسيطة لأن النموذج مفتوح للجميع (حصة Gemini ومفتاحه على حسابك) ----
 # حد للطلبات لكل زائر في الدقيقة، وحد للموقع كله، وحد لحجم الملف الصوتي. للتعديل: متغيرات البيئة NAKHLA_RATE_MAX و NAKHLA_RATE_GLOBAL.
 _RATE_HITS = collections.defaultdict(collections.deque)
-_RATE_PATHS = {"/predict-full", "/predict-audio", "/locate-signs", "/agent/chat", "/estimate-age-health"}
+_RATE_PATHS = {"/predict-full", "/predict-audio", "/locate-signs", "/agent/chat", "/estimate-age-health", "/farmers/apply", "/demo/sample", "/demo/analyze", "/demo/report"}
 _RATE_MAX = int(os.environ.get("NAKHLA_RATE_MAX", "20"))
 _RATE_GLOBAL = int(os.environ.get("NAKHLA_RATE_GLOBAL", "150"))
 MAX_AUDIO_BYTES = 6 * 1024 * 1024
@@ -79,6 +84,10 @@ async def rate_limit(request, call_next):
         _RATE_HITS[ip].append(now)
         _RATE_HITS["__all__"].append(now)
     return await call_next(request)
+
+
+# بوابة موقع المالك: آخر طبقة تُضاف فتكون الأولى في الاستقبال. شوفي owner_gate.py (NAKHLA_DEVICE_KEYS / NAKHLA_ADMIN_KEY)
+app.add_middleware(OwnerGate)
 
 
 def _html(filename):
@@ -139,11 +148,13 @@ def serve_nav():
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    # gemini_key_set: true/false only (never the key). Lets you check on Render whether the AI key reached the server.
+    return {"ok": True, "gemini_key_set": bool(os.environ.get("GEMINI_API_KEY"))}
 
 
 # تسجيلات تجريبية مُحاكاة (من make_demo_wavs.py) ليجرّب الزائر بدون ما يملك ملفًا صوتيًا
-DEMO_WAVS = {"1_healthy.wav", "2_early.wav", "3_moderate.wav", "4_advanced.wav"}
+DEMO_WAVS = {"1_healthy.wav", "2_early.wav", "3_moderate.wav", "4_advanced.wav",
+             "weevil_dense_sim.wav", "weevil_sparse_sim.wav", "air_noise_sim.wav"}   # the last three: simulated sounds to play from a phone in front of the microphone
 
 
 @app.get("/demo-wav/{name}")
@@ -177,6 +188,34 @@ def serve_instructions_page():
 @app.get("/palm.html")
 def serve_palm_detail_page():
     return _html("palm.html")
+
+
+@app.get("/owner.html")
+def serve_owner():
+    return _html("owner.html")
+
+
+@app.get("/farmers-join.html")
+def serve_farmers_join():
+    return _html("farmers-join.html")
+
+
+@app.get("/admin.html")
+def serve_admin():
+    return _html("admin.html")
+
+
+@app.api_route("/install.mp4", methods=["GET", "HEAD"])  # the home page checks with HEAD whether the video exists
+def serve_install_video():
+    path = os.path.join(BASE_DIR, "install.mp4")
+    if not os.path.exists(path):
+        return JSONResponse({"error": "not_found"}, status_code=404)
+    return FileResponse(path, media_type="video/mp4")
+
+
+@app.get("/try.html")
+def serve_try_page():
+    return _html("try.html")
 
 
 @app.get("/farmers.html")
@@ -242,6 +281,29 @@ def init_db():
             area TEXT NOT NULL,
             note TEXT,
             created_at TEXT NOT NULL
+        )
+    """)
+    # توثيق المزارعين: لا يظهر مزارع لأصحاب الأجهزة إلا بعد مراجعة ترخيصه يدويًا (verified=1)
+    for col, ddl in (("verified", "INTEGER NOT NULL DEFAULT 0"), ("expertise", "TEXT"),
+                     ("license_no", "TEXT"), ("license_type", "TEXT"), ("verified_at", "TEXT")):
+        try:
+            conn.execute(f"ALTER TABLE helpers ADD COLUMN {col} {ddl}")
+        except sqlite3.OperationalError:
+            pass
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS farmer_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            area TEXT NOT NULL,
+            license_no TEXT NOT NULL,
+            license_type TEXT NOT NULL,
+            expertise TEXT,
+            note TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            review_note TEXT,
+            created_at TEXT NOT NULL,
+            reviewed_at TEXT
         )
     """)
     conn.execute("""
@@ -674,11 +736,12 @@ async def set_farm_contact_route(
 
 
 # ---------- شبكة المساعدين وطلبات الزيارة ----------
-# فكرة الميزة: إذا كان صاحب النخلة بعيدًا عن المزرعة وجاءه تنبيه، يقدر يطلب من
-# مزارع مسجّل في المنطقة أن يزور النخلة. النظام نموذج أولي: المساعدون هم من سجّلوا
-# أنفسهم فقط، ولا نضمن وجود أحد في كل منطقة ولا زمن الاستجابة.
-# الخصوصية: رقم المساعد لا يظهر علنًا، ولا يصل لصاحب الطلب إلا بعد أن يقبل الطلب؛
-# ورقم صاحب الطلب لا يظهر إلا للمساعدين المسجّلين.
+# فكرة الميزة: إذا كان صاحب النخلة بعيدًا عن المزرعة وجاءه تنبيه، يختار بنفسه مزارعًا موثّقًا
+# (حسب خبرته ومنطقته) ويطلب منه زيارة النخلة.
+# التوثيق: المزارع يقدّم طلبًا في الموقع العام (/farmers/apply) برقم ترخيصه، ويراجع المشرف الترخيص
+# يدويًا (صفحة admin) ثم يعتمده؛ ولا يظهر لأصحاب الأجهزة إلا المعتمد. لا يوجد ربط آلي مع أبشر أو نما.
+# الخصوصية: قائمة المزارعين لا تُعرض إلا لمالك جهاز (البوابة)، بلا أرقام هواتف؛ يصل رقم المزارع
+# لصاحب الجهاز بعد أن يرسل له طلب الزيارة فقط.
 
 def _clean_phone(raw: str) -> str:
     keep = "".join(ch for ch in (raw or "") if ch.isdigit() or ch == "+")
@@ -717,7 +780,7 @@ def _find_helper_by_phone(phone: str):
     if len(key) < 7:
         return None
     conn = sqlite3.connect(DB_PATH)
-    rows = conn.execute("SELECT id, name, phone, area FROM helpers").fetchall()
+    rows = conn.execute("SELECT id, name, phone, area FROM helpers WHERE verified=1").fetchall()
     conn.close()
     for r in rows:
         if _phone_key(r[2]) == key:
@@ -725,57 +788,154 @@ def _find_helper_by_phone(phone: str):
     return None
 
 
-@app.post("/helpers")
-async def register_helper(
+EXPERTISE = {"inspect", "treat", "remove", "prune", "general"}
+LICENSE_TYPES = {"practice", "profession", "farm", "other"}
+
+
+def _clean_expertise(raw) -> str:
+    out = []
+    for x in (raw or "").split(","):
+        x = x.strip()
+        if x in EXPERTISE and x not in out:
+            out.append(x)
+    return ",".join(out)
+
+
+def _clean_license(raw) -> str:
+    s = "".join(ch for ch in (raw or "") if ch.isalnum() or ch in "-/_")
+    return s[:40] if len(s) >= 4 else ""
+
+
+@app.post("/farmers/apply")
+async def farmer_apply(
     name: str = Form(...),
     phone: str = Form(...),
     area: str = Form(...),
+    license_no: str = Form(...),
+    license_type: str = Form(...),
+    expertise: str = Form(...),
     note: Optional[str] = Form(None),
     consent: str = Form(...),
 ):
-    """مزارع/عامل يسجّل نفسه ليستقبل طلبات زيارة النخيل في منطقته."""
+    """طلب انضمام مزارع (موقع عام). لا يظهر لأحد قبل أن يراجع المشرف ترخيصه ويعتمده."""
     if consent != "yes":
         return JSONResponse({"error": "consent_required"}, status_code=400)
     name, area, note = _clean_text(name, 60), _clean_text(area, 80), _clean_text(note, 160)
-    phone = _clean_phone(phone)
-    if not name or not area or not phone:
+    phone, lic, exp = _clean_phone(phone), _clean_license(license_no), _clean_expertise(expertise)
+    if license_type not in LICENSE_TYPES or not (name and area and phone and lic and exp):
         return JSONResponse({"error": "invalid_input"}, status_code=400)
-    existing = _find_helper_by_phone(phone)
+    key = _phone_key(phone)
     conn = sqlite3.connect(DB_PATH)
-    if existing:
-        conn.execute("UPDATE helpers SET name=?, area=?, note=? WHERE id=?", (name, area, note, existing["id"]))
-        status = "updated"
+    if conn.execute("SELECT 1 FROM helpers WHERE verified=1 AND phone LIKE ?", ("%" + key,)).fetchone():
+        conn.close()
+        return {"status": "already_approved"}
+    pending = [r for r in conn.execute("SELECT id, phone FROM farmer_applications WHERE status='pending'").fetchall()
+               if _phone_key(r[1]) == key]
+    now = datetime.utcnow().isoformat()
+    if pending:
+        conn.execute("UPDATE farmer_applications SET name=?, phone=?, area=?, license_no=?, license_type=?, "
+                     "expertise=?, note=?, created_at=? WHERE id=?",
+                     (name, phone, area, lic, license_type, exp, note, now, pending[0][0]))
+        app_id = pending[0][0]
     else:
-        conn.execute(
-            "INSERT INTO helpers (name, phone, area, note, created_at) VALUES (?,?,?,?,?)",
-            (name, phone, area, note, datetime.utcnow().isoformat()),
-        )
-        status = "created"
+        cur = conn.execute("INSERT INTO farmer_applications (name, phone, area, license_no, license_type, expertise, note, created_at) "
+                           "VALUES (?,?,?,?,?,?,?,?)", (name, phone, area, lic, license_type, exp, note, now))
+        app_id = cur.lastrowid
     conn.commit()
     conn.close()
-    return {"status": status}
+    return {"status": "received", "id": app_id}
+
+
+@app.get("/admin/applications")
+def admin_applications(status: str = "pending"):
+    """للمشرف فقط (بوابة NAKHLA_ADMIN_KEY): طلبات الانضمام لمراجعتها يدويًا."""
+    if status not in {"pending", "approved", "rejected", "revoked"}:
+        return JSONResponse({"error": "invalid_input"}, status_code=400)
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT id, name, phone, area, license_no, license_type, expertise, note, status, review_note, created_at, reviewed_at "
+        "FROM farmer_applications WHERE status=? ORDER BY id DESC LIMIT 200", (status,)).fetchall()
+    counts = dict(conn.execute("SELECT status, COUNT(*) FROM farmer_applications GROUP BY status").fetchall())
+    conn.close()
+    keys = ["id", "name", "phone", "area", "license_no", "license_type", "expertise", "note", "status", "review_note",
+            "created_at", "reviewed_at"]
+    return {"applications": [dict(zip(keys, r)) for r in rows], "counts": counts}
+
+
+@app.post("/admin/applications/{app_id}/decision")
+async def admin_decision(app_id: int, decision: str = Form(...), note: Optional[str] = Form(None)):
+    """approve: يصير المزارع ظاهرًا لأصحاب الأجهزة. reject: يُرفض. revoke: يُسحب اعتماد مزارع معتمد."""
+    if decision not in {"approve", "reject", "revoke"}:
+        return JSONResponse({"error": "invalid_input"}, status_code=400)
+    note = _clean_text(note, 200)
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute("SELECT name, phone, area, license_no, license_type, expertise, note, status "
+                       "FROM farmer_applications WHERE id=?", (app_id,)).fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse({"error": "not_found"}, status_code=404)
+    name, phone, area, lic, ltype, exp, fnote, status = row
+    now = datetime.utcnow().isoformat()
+    key = _phone_key(phone)
+    existing = None
+    for r in conn.execute("SELECT id, phone FROM helpers").fetchall():
+        if _phone_key(r[1]) == key:
+            existing = r[0]
+            break
+    if decision == "approve":
+        if status not in ("pending", "revoked", "rejected"):
+            conn.close()
+            return JSONResponse({"error": "already_approved"}, status_code=409)
+        if existing:
+            conn.execute("UPDATE helpers SET name=?, area=?, note=?, expertise=?, license_no=?, license_type=?, "
+                         "verified=1, verified_at=? WHERE id=?", (name, area, fnote, exp, lic, ltype, now, existing))
+        else:
+            conn.execute("INSERT INTO helpers (name, phone, area, note, created_at, expertise, license_no, license_type, "
+                         "verified, verified_at) VALUES (?,?,?,?,?,?,?,?,1,?)",
+                         (name, phone, area, fnote, now, exp, lic, ltype, now))
+        new_status = "approved"
+    elif decision == "revoke":
+        if existing:
+            conn.execute("UPDATE helpers SET verified=0 WHERE id=?", (existing,))
+        new_status = "revoked"
+    else:
+        new_status = "rejected"
+    conn.execute("UPDATE farmer_applications SET status=?, review_note=?, reviewed_at=? WHERE id=?",
+                 (new_status, note, now, app_id))
+    conn.commit()
+    conn.close()
+    return {"status": new_status, "id": app_id}
+
+
+@app.post("/helpers")
+async def register_helper_closed():
+    """التسجيل الذاتي أُغلق: لا يظهر مزارع لأصحاب الأجهزة إلا بعد التقديم برقم ترخيص ومراجعته."""
+    return JSONResponse({"error": "registration_closed", "apply_url": "/farmers-join.html"}, status_code=410)
 
 
 @app.get("/helpers/count")
 def helpers_count():
-    """عدد المساعدين المسجّلين فعليًا (يبدأ من صفر) مع المناطق التي سجّلوها."""
+    """عدد المزارعين المعتمدين فعليًا (يبدأ من صفر)."""
     conn = sqlite3.connect(DB_PATH)
-    rows = conn.execute("SELECT area FROM helpers").fetchall()
+    rows = conn.execute("SELECT area FROM helpers WHERE verified=1").fetchall()
     conn.close()
     areas = collections.Counter(r[0] for r in rows)
     return {"count": len(rows), "areas": [{"area": a, "count": c} for a, c in areas.most_common(30)]}
 
 
 @app.get("/helpers")
-def helpers_public(area: Optional[str] = None):
-    """قائمة عامة بدون أرقام هواتف: الاسم والمنطقة والملاحظة فقط."""
+def helpers_verified(area: Optional[str] = None, expertise: Optional[str] = None):
+    """قائمة المزارعين المعتمدين لمالك الجهاز (بوابة): بلا هواتف. يصفّى بالمنطقة أو بنوع الخبرة."""
     conn = sqlite3.connect(DB_PATH)
-    rows = conn.execute("SELECT name, area, note FROM helpers ORDER BY id DESC LIMIT 100").fetchall()
+    rows = conn.execute("SELECT id, name, area, note, expertise FROM helpers WHERE verified=1 ORDER BY id DESC LIMIT 100").fetchall()
     conn.close()
-    items = [{"name": r[0], "area": r[1], "note": r[2]} for r in rows]
+    items = [{"id": r[0], "name": r[1], "area": r[2], "note": r[3], "verified": True,
+              "expertise": [x for x in (r[4] or "").split(",") if x]} for r in rows]
     if area:
         a = _clean_text(area, 80).lower()
         items = [i for i in items if a in i["area"].lower()]
+    if expertise in EXPERTISE:
+        items = [i for i in items if expertise in i["expertise"]]
     return {"helpers": items}
 
 
@@ -790,11 +950,14 @@ async def create_visit_request(
     when_needed: Optional[str] = Form(None),
     purpose: Optional[str] = Form(None),
     coords: Optional[str] = Form(None),
+    target_helper_id: Optional[int] = Form(None),
     consent: str = Form(...),
 ):
-    """صاحب نخلة بعيد عن المزرعة يطلب أن يزورها مساعد مسجّل في المنطقة."""
+    """مالك الجهاز يختار مزارعًا معتمدًا ويطلب منه زيارة النخلة. يصله اسم المزارع ورقمه ليتواصل معه مباشرة."""
     if consent != "yes":
         return JSONResponse({"error": "consent_required"}, status_code=400)
+    if target_helper_id is None:
+        return JSONResponse({"error": "choose_a_farmer"}, status_code=400)
     area, requester_name = _clean_text(area, 80), _clean_text(requester_name, 60)
     palm_id, details, severity = _clean_text(palm_id, 60), _clean_text(details, 300), _clean_text(severity, 20)
     phone = _clean_phone(requester_phone)
@@ -804,8 +967,13 @@ async def create_visit_request(
     if not area or not requester_name or not phone:
         return JSONResponse({"error": "invalid_input"}, status_code=400)
     conn = sqlite3.connect(DB_PATH)
+    target = conn.execute("SELECT id, name, phone FROM helpers WHERE id=? AND verified=1", (target_helper_id,)).fetchone()
+    if not target:
+        conn.close()
+        return JSONResponse({"error": "farmer_not_available"}, status_code=404)
     open_n = conn.execute(
-        "SELECT COUNT(*) FROM visit_requests WHERE requester_phone=? AND status='open'", (phone,)
+        "SELECT COUNT(*) FROM visit_requests WHERE requester_phone=? AND status IN ('open','sent') AND created_at > ?",
+        (phone, (datetime.utcnow() - timedelta(days=1)).isoformat()),
     ).fetchone()[0]
     if open_n >= 5:
         conn.close()
@@ -816,10 +984,11 @@ async def create_visit_request(
         (palm_id, area, details, severity, requester_name, phone, datetime.utcnow().isoformat(),
          when_needed, purpose, coords),
     )
-    conn.commit()
     req_id = cur.lastrowid
+    conn.execute("UPDATE visit_requests SET status='sent', helper_id=? WHERE id=?", (target[0], req_id))
+    conn.commit()
     conn.close()
-    return {"status": "ok", "id": req_id, "registered_helpers": helpers_count()["count"]}
+    return {"status": "ok", "id": req_id, "helper": {"name": target[1], "phone": target[2]}}
 
 
 @app.get("/visit-requests")
@@ -881,7 +1050,7 @@ def my_visit_requests(phone: str):
             continue
         item = {"id": r[0], "palm_id": r[1], "area": r[2], "details": r[3], "status": r[4], "created_at": r[5],
                 "when_needed": r[9], "purpose": r[10]}
-        if r[4] == "accepted":
+        if r[4] in ("accepted", "sent"):
             item["helper"] = {"name": r[7], "phone": r[8]}
         out.append(item)
     return {"requests": out[:20]}
@@ -908,6 +1077,80 @@ AGENT_TOOL_EXECUTOR = {
     "palms_due_for_recheck": lambda: palms_due_for_recheck(),
     "get_farm_contact": lambda: (get_farm_contact() or {"status": "no backup contact registered yet"}),
 }
+
+
+async def _demo_clip(audio):
+    """Reads the uploaded WAV (the browser converts any recording to a small 4 kHz WAV, up to 15 s) and analyses it:
+    the 4-stage model on each 5 s window, then the pulse check (demo_audio.py). Saves nothing.
+    Returns (analysis, error_response, key); key is a short hash of the audio (only used to pick the demo point)."""
+    raw = await audio.read()
+    if len(raw) > MAX_AUDIO_BYTES:
+        return None, JSONResponse({"error": "too_large", "message": "The audio file is too large (maximum 6 MB)."}, status_code=413), None
+    key = hashlib.sha1(raw).hexdigest()[:12]
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        tmp.write(raw)
+        tmp_path = tmp.name
+    try:
+        samples, sr = load_audio_any(tmp_path)
+        return demo_audio.analyze_clip(samples, sr, predict_severity_from_array, fuse_audio_image), None, key
+    except Exception as e:
+        print(f"[NakhlaGuard demo] analyze failed: {type(e).__name__}: {e}")
+        return None, JSONResponse({"error": "bad_audio", "message": "Could not read this recording."}, status_code=422), None
+    finally:
+        os.remove(tmp_path)
+
+
+@app.post("/demo/analyze")
+async def demo_analyze(audio: UploadFile = File(...)):
+    """Public try page: analyse the visitor's own (or a sample) recording with the local model plus the pulse check. No Gemini, nothing is stored."""
+    if not demo_agent.demo_enabled():
+        return JSONResponse({"error": "demo_off", "message": "The public demo is switched off."}, status_code=403)
+    result, err, key = await _demo_clip(audio)
+    if err:
+        return err
+    # DEMONSTRATION point (mode "demo"), exactly as on the owner site: not a measurement.
+    result["sensor_location"] = demo_location(key or "demo") if result["stage"] != "healthy" else None
+    result["simulated_or_uploaded"] = True
+    return JSONResponse(result)
+
+
+@app.post("/demo/report")
+async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), language: str = Form("en")):
+    """Public try page: the treatment report (headings that open, a one-month plan week by week) for the same recording.
+    Written by the AI assistant (Gemini) when a key is set and the per-visitor / daily caps allow it; otherwise the ready-made
+    version in demo_report.py is returned and labelled as such. Nothing is stored."""
+    if not demo_agent.demo_enabled():
+        return JSONResponse({"error": "demo_off", "message": "The public demo is switched off."}, status_code=403)
+    result, err, _key = await _demo_clip(audio)
+    if err:
+        return err
+    language = language if language in ("ar", "en", "ur") else "en"
+    api_key = os.environ.get("GEMINI_API_KEY")
+    ask_ai = None
+    if api_key and demo_agent.allow_report(demo_agent.client_ip(request)):
+        async def ask_ai(system, user):
+            from gemini_client import call_gemini
+            payload = {"system_instruction": {"parts": [{"text": system}]},
+                       "contents": [{"role": "user", "parts": [{"text": user}]}],
+                       "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
+            data = await call_gemini(payload, api_key)
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+    report = await demo_report.make_report(result["stage"], result.get("risk"), result.get("evidence"), language, ask_ai)
+    return JSONResponse({"report": report})
+
+
+@app.post("/demo/sample")
+async def demo_sample(sample: str = Form(...)):
+    """Public "try the device" box: classifies one of the four built-in SIMULATED recordings with the local model (no Gemini)."""
+    status, payload = demo_agent.analyze_sample(sample, BASE_DIR, predict_severity_from_file)
+    return JSONResponse(payload, status_code=status)
+
+
+@app.post("/demo/agent")
+async def demo_agent_chat(request: Request, message: str = Form(...), language: str = Form("en")):
+    """Public try-it box on the home page: the same agent loop, but on a FAKE sample farm and with strict caps (see demo_agent.py)."""
+    status, payload = await demo_agent.demo_chat(message, language, demo_agent.client_ip(request))
+    return JSONResponse(payload, status_code=status)
 
 
 @app.post("/agent/chat")

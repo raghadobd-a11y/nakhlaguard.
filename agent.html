@@ -50,8 +50,8 @@
   }
   .trace .tool-chip{
     display:inline-block; background:#E7DFCB; color:var(--palm-deep); padding:2px 9px;
-    border-radius:10px; margin-inline-end:6px; margin-bottom:4px; font-family:'Space Grotesk',sans-serif;
-    font-size:.72rem;
+    border-radius:12px; margin-inline-end:6px; margin-bottom:4px;
+    font-size:.8rem;
   }
 
   .suggestions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
@@ -147,12 +147,22 @@ function addMessage(text, role){
   return div;
 }
 
+const esc = x => String(x).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function addTrace(trace){
   if(!trace || !trace.length) return;
   const log = document.getElementById('chatLog');
   const div = document.createElement('div');
   div.className = 'trace';
-  div.innerHTML = '🔧 ' + trace.map(t => `<span class="tool-chip">${t.tool}${Object.keys(t.args||{}).length ? '(' + JSON.stringify(t.args).replace(/"/g,'') + ')' : ''}</span>`).join('');
+  const STEP = {
+    list_palms: {en:'📋 Looking at your palms', ar:'📋 يعرض نخيلك', ur:'📋 آپ کی کھجوریں دیکھ رہا ہے'},
+    get_palm_details: {en:'🔍 Reading the details of {p}', ar:'🔍 يقرأ تفاصيل {p}', ur:'🔍 {p} کی تفصیل پڑھ رہا ہے'},
+    palms_needing_attention: {en:'🔎 Looking for the palms that need attention', ar:'🔎 يبحث عن النخيل التي تحتاج انتباهًا', ur:'🔎 توجہ طلب کھجوریں تلاش کر رہا ہے'},
+    palms_due_for_recheck: {en:'📅 Looking for the palms due for a re-check', ar:'📅 يبحث عن النخيل المستحقة لإعادة الفحص', ur:'📅 دوبارہ جانچ کی منتظر کھجوریں تلاش کر رہا ہے'},
+    get_farm_contact: {en:'📞 Reading the farm backup contact', ar:'📞 يقرأ جهة الاتصال الاحتياطية للمزرعة', ur:'📞 فارم کا متبادل رابطہ پڑھ رہا ہے'}
+  };
+  const lang = getLang();
+  const label = t => { const d = STEP[t.tool]; if(!d) return '⚙️ ' + t.tool; const a = t.args || {}; return (d[lang] || d.en).replace('{p}', a.palm_id || a.palm || ''); };
+  div.innerHTML = trace.map(t => `<span class="tool-chip">${esc(label(t))}</span>`).join('');
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
