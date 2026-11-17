@@ -32,7 +32,7 @@ COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # صفحات وملفات عامة (لا تحتاج مفتاحًا)
 PUBLIC_EXACT = {
     "/", "/index.html", "/owner.html", "/evidence.html", "/claims.json", "/nav.js", "/health",
-    "/farmers-join.html", "/farmers/apply", "/demo/agent", "/demo/sample", "/demo/analyze", "/demo/report", "/try.html", "/install.mp4", "/favicon.ico",
+    "/farmers-join.html", "/farmers/apply", "/demo/agent", "/demo/sample", "/demo/analyze", "/demo/report", "/try.html", "/assistant.html", "/install.mp4", "/favicon.ico",
     "/verification_report.html", "/verification_report.json",
 }
 PUBLIC_EMBED = {"/locate.html"}           # open only as the 3D trunk viewer inside the public try page (?embed=1)

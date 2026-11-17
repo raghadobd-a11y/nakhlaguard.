@@ -6,13 +6,14 @@
   var me = document.currentScript, tabsOnly = !!(me && me.dataset && me.dataset.mode === "tabs");
   var path = location.pathname.replace(/\/+$/, "") || "/";
   // موقعان: العام (رئيسية، جرّب، أدلة، تقديم المزارعين، دخول المالك) وموقع المالك الخاص (يُفتح بباركود الجهاز).
-  var PUBLIC_PATHS = ["/", "/index.html", "/owner.html", "/try.html", "/evidence.html", "/farmers-join.html", "/verification_report.html"];
+  var PUBLIC_PATHS = ["/", "/index.html", "/owner.html", "/try.html", "/assistant.html", "/evidence.html", "/farmers-join.html", "/verification_report.html"];
   var isPublic = PUBLIC_PATHS.indexOf(path) >= 0;
   var PUBLIC_TABS = [
     { href: "/index.html", match: ["/", "/index.html"], icon: "🏠", t: { en: "Home", ar: "الرئيسية", ur: "ہوم" } },
     { href: "/farmers-join.html", match: ["/farmers-join.html"], icon: "🧑‍🌾", t: { en: "Farmers", ar: "للمزارعين", ur: "کسان" } },
     { href: "/evidence.html", match: ["/evidence.html", "/verification_report.html"], icon: "📚", t: { en: "Evidence", ar: "الأدلة", ur: "ثبوت" } },
     { href: "/try.html", match: ["/try.html"], icon: "🎙️", t: { en: "Try", ar: "جرّب", ur: "آزمائیں" } },
+    { href: "/assistant.html", match: ["/assistant.html"], icon: "🤖", t: { en: "Assistant", ar: "المساعد", ur: "معاون" } },
     { href: "/owner.html", match: ["/owner.html"], icon: "🔑", t: { en: "Owner", ar: "المالك", ur: "مالک" } }
   ];
   var OWNER_TABS = [
@@ -23,6 +24,7 @@
     { href: "/agent.html", match: ["/agent.html"], icon: "🤖", t: { en: "Assistant", ar: "المساعد", ur: "معاون" } }
   ];
   var TABS = isPublic ? PUBLIC_TABS : OWNER_TABS;
+  var MANY = TABS.length > 5;   // six tabs on the public site: slightly smaller labels so they fit on a phone
 
   var css = document.createElement("style");
   css.textContent =
@@ -34,6 +36,7 @@
     ".nk-tabs{position:fixed;left:0;right:0;bottom:10px;z-index:70;margin:0 auto;width:calc(100% - 20px);max-width:560px;display:flex;background:#123A2E;border-radius:20px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.28)}" +
     ".nk-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;border-radius:14px;color:#cfd8cf;text-decoration:none;font-size:.72rem;line-height:1.2;text-align:center}" +
     ".nk-tab span{font-size:1.25rem}.nk-tab.on{background:#1F5C4A;color:#fff;box-shadow:inset 0 -3px 0 #D9A441}" +
+    (MANY ? ".nk-tab{font-size:.66rem;padding:7px 1px}.nk-tab span{font-size:1.15rem}" : "") +
     ".nk-seg{display:inline-flex;border:1px solid rgba(237,230,214,.5);border-radius:999px;overflow:hidden}" +
     ".nk-seg button{all:unset;cursor:pointer;padding:5px 11px;font-size:.78rem;line-height:1.7;color:#EDE6D6;white-space:nowrap}" +
     ".nk-seg button+button{border-inline-start:1px solid rgba(237,230,214,.3)}" +

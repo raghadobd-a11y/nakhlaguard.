@@ -218,6 +218,12 @@ def serve_try_page():
     return _html("try.html")
 
 
+@app.get("/assistant.html")
+def serve_assistant_page():
+    """Public page for the agentic assistant ("Haris"): the same demo agent as on the home page, on the sample farm (see demo_agent.py)."""
+    return _html("assistant.html")
+
+
 @app.get("/farmers.html")
 def serve_farmers_page():
     return _html("farmers.html")
@@ -1079,7 +1085,7 @@ AGENT_TOOL_EXECUTOR = {
 }
 
 
-async def _demo_clip(audio):
+async def _demo_clip(audio, clipped=False):
     """Reads the uploaded WAV (the browser converts any recording to a small 4 kHz WAV, up to 15 s) and analyses it:
     the 4-stage model on each 5 s window, then the pulse check (demo_audio.py). Saves nothing.
     Returns (analysis, error_response, key); key is a short hash of the audio (only used to pick the demo point)."""
@@ -1092,7 +1098,7 @@ async def _demo_clip(audio):
         tmp_path = tmp.name
     try:
         samples, sr = load_audio_any(tmp_path)
-        return demo_audio.analyze_clip(samples, sr, predict_severity_from_array, fuse_audio_image), None, key
+        return demo_audio.analyze_clip(samples, sr, predict_severity_from_array, fuse_audio_image, clipped=bool(clipped)), None, key
     except Exception as e:
         print(f"[NakhlaGuard demo] analyze failed: {type(e).__name__}: {e}")
         return None, JSONResponse({"error": "bad_audio", "message": "Could not read this recording."}, status_code=422), None
@@ -1101,11 +1107,11 @@ async def _demo_clip(audio):
 
 
 @app.post("/demo/analyze")
-async def demo_analyze(audio: UploadFile = File(...)):
+async def demo_analyze(audio: UploadFile = File(...), clipped: str = Form("0")):
     """Public try page: analyse the visitor's own (or a sample) recording with the local model plus the pulse check. No Gemini, nothing is stored."""
     if not demo_agent.demo_enabled():
         return JSONResponse({"error": "demo_off", "message": "The public demo is switched off."}, status_code=403)
-    result, err, key = await _demo_clip(audio)
+    result, err, key = await _demo_clip(audio, clipped == "1")
     if err:
         return err
     # DEMONSTRATION point (mode "demo"), exactly as on the owner site: not a measurement.
@@ -1115,15 +1121,17 @@ async def demo_analyze(audio: UploadFile = File(...)):
 
 
 @app.post("/demo/report")
-async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), language: str = Form("en")):
+async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), language: str = Form("en"), clipped: str = Form("0")):
     """Public try page: the treatment report (headings that open, a one-month plan week by week) for the same recording.
     Written by the AI assistant (Gemini) when a key is set and the per-visitor / daily caps allow it; otherwise the ready-made
     version in demo_report.py is returned and labelled as such. Nothing is stored."""
     if not demo_agent.demo_enabled():
         return JSONResponse({"error": "demo_off", "message": "The public demo is switched off."}, status_code=403)
-    result, err, _key = await _demo_clip(audio)
+    result, err, _key = await _demo_clip(audio, clipped == "1")
     if err:
         return err
+    if result.get("inconclusive"):      # air / silence on the microphone: there is nothing honest to write a plan about
+        return JSONResponse({"error": "inconclusive", "message": "This recording could not be judged (air or noise on the microphone). Record again."}, status_code=409)
     language = language if language in ("ar", "en", "ur") else "en"
     api_key = os.environ.get("GEMINI_API_KEY")
     ask_ai = None

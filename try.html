@@ -52,7 +52,7 @@
   .wavemeta b{ color:#ff8f7e }
   .verdict{ display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:center; border-radius:14px; padding:14px 16px; color:#fff }
   .verdict .vi{ font-size:2.2rem } .verdict h3{ font-size:1.25rem; line-height:1.4 } .verdict p{ font-size:.92rem; opacity:.95 }
-  .v-healthy{ background:#2e7d4f } .v-early{ background:#a8861a } .v-moderate{ background:#c0651a } .v-advanced{ background:#b3342d }
+  .v-inc{ background:#5d6b64 } .v-healthy{ background:#2e7d4f } .v-early{ background:#a8861a } .v-moderate{ background:#c0651a } .v-advanced{ background:#b3342d }
   .res-grid{ display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-top:14px; align-items:start }
   @media(max-width:720px){ .res-grid{ grid-template-columns:1fr } }
   .ptitle{ font-size:.82rem; font-weight:700; color:var(--ink-soft); margin-bottom:2px }
@@ -89,6 +89,9 @@
   .acc-t{ flex:none; font-size:.8rem; border:1.5px solid var(--palm); border-radius:999px; padding:2px 12px; color:var(--palm); font-weight:600 }
   .acc.open .acc-t{ background:var(--palm); color:#fff }
   .acc-b{ padding:0 16px 12px; line-height:1.95; font-size:.95rem } .acc-b ul{ padding-inline-start:22px }
+  .wgoal{ margin:2px 0 8px; color:var(--palm-deep); font-weight:600 } .wcheck{ margin:10px 0 4px; background:#EAF3EE; border-radius:10px; padding:8px 12px; font-size:.9rem }
+  .askbtn{ display:inline-block; margin-top:8px; font:inherit; font-size:.86rem; font-weight:700; text-decoration:none; color:var(--palm-deep); background:#fff; border:1.5px solid var(--palm); border-radius:999px; padding:5px 14px } .askbtn:hover{ background:var(--palm); color:#fff }
+  .askall{ text-align:center; margin-top:14px }
   .rnote{ margin-top:12px; font-size:.8rem; color:var(--ink-soft) }
   .cta{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px }
   .cta a{ text-decoration:none; display:inline-block } .cta a.btn{ padding:10px 16px }
@@ -152,11 +155,12 @@
       <h2 id="h_res"></h2>
       <div id="verdict"></div>
       <div id="veto" class="veto hide"></div>
-      <div class="res-grid">
+      <div class="res-grid" id="resGrid">
         <div><div class="ptitle" id="ptitle"></div><div id="bars"></div><div id="nf" class="soft"></div></div>
         <div class="gauge" id="gauge"></div>
       </div>
       <div class="evid" id="evid"></div>
+      <div class="soft" id="tapnote"></div>
       <div class="note" id="honest"></div>
     </div>
 
@@ -168,7 +172,7 @@
       <div class="note" id="trunkNote"></div>
     </div>
 
-    <div class="card" style="border-top-color:var(--palm-deep)">
+    <div class="card" id="repCard" style="border-top-color:var(--palm-deep)">
       <div class="step" id="s4"></div>
       <h2 id="h_rep"></h2>
       <div class="soft" id="repSub"></div>
@@ -177,7 +181,7 @@
     </div>
 
     <div class="cta">
-      <a class="btn fill" href="/#try-agent" id="c1"></a>
+      <a class="btn fill" href="/assistant.html" id="c1"></a>
       <a class="btn" href="/owner.html" id="c2"></a>
       <a class="btn" href="/evidence.html" id="c3"></a>
     </div>
@@ -196,7 +200,7 @@ const T = {
     samples:{healthy:"نخلة سليمة", early:"مرحلة مبكرة", moderate:"مرحلة متوسطة", advanced:"مرحلة متقدمة"},
     ts_h:"🔊 أصوات للتجربة أمام المحكم", ts_s:"أصوات محاكاة صنعناها بأنفسنا، وليست تسجيلًا من نخلة حقيقية. شغّلها من جوالك قرب ميكروفون الجهاز، أو حمّلها وارفعها.",
     ts:{dense:["نبضات كثيفة","إصابة واضحة: يجب أن يقول إصابة"], sparse:["نبضات قليلة","بداية إصابة: يجب أن يقول إصابة"], air:["هواء فقط","للمقارنة: يجب أن يقول لا مؤشرات"]}, play:"▶ شغّل", stop:"⏹ أوقف", dl:"⬇ حمّل",
-    ht_h:"كيف أجرّب أمام المحكم؟", ht:["شغّل الصوت من جوالك بأعلى مستوى، وقرّب السماعة من ميكروفون اللابتوب (نحو 5 إلى 10 سم).","اختر «سجّل الآن» واضغط الزر وسجّل 10 إلى 12 ثانية، ثم اضغط للإيقاف.","انتظر النتيجة. قد تختلف المرحلة قليلًا حسب السماعة والغرفة، لكن «هواء فقط» يجب ألا يُعدّ إصابة."],
+    ht_h:"كيف أجرّب أمام المحكم؟", ht:["شغّل الصوت من جوالك بأعلى مستوى، وقرّب السماعة من ميكروفون اللابتوب (نحو 5 إلى 10 سم).","اختر «سجّل الآن» واضغط الزر وسجّل 10 إلى 12 ثانية، ثم اضغط للإيقاف.","انتظر النتيجة. قد تختلف المرحلة قليلًا حسب السماعة والغرفة، لكن «هواء فقط» يجب ألا يُعدّ إصابة.","اختبار الهواء: انفخ أو حرّك الهواء قرب الميكروفون. سيقول الموقع «لا مؤشرات» أو «ما قدرنا نحكم، أعد التسجيل»، ولن يقول إصابة."],
     decoding:"جارٍ قراءة التسجيل…", analyzing:"يُصغي ويحلّل بالذكاء الاصطناعي…", bad:"تعذّر قراءة هذا التسجيل. جرّب ملفًا آخر.", toobig:"الملف كبير. اختر ملفًا أصغر من 25 ميغابايت.", err:"تعذّر التحليل الآن. حاول بعد قليل.", limit:"طلبات كثيرة. حاول بعد قليل.", off:"التجربة العامة متوقفة حاليًا.",
     meta:(d,p)=>`المدة ${d} ثانية · نحلّل حتى 15 ثانية · العلامات الحمراء = نبضات سمعناها (${p})`,
     s2:"الخطوة 2", h_res:"ماذا سمع الذكاء الاصطناعي؟", ptitle:"رأي النموذج",
@@ -205,10 +209,13 @@ const T = {
     conf:"الثقة", risk:"مؤشر الخطورة", norisk:"لا يوجد مؤشر خطورة لهذا الصوت", nf:"مرشّح الضجيج: ", nf_on:"حجب إنذارًا لأن الصوت لا يشبه نشاط اليرقات.", nf_off:"لم يحجب شيئًا.",
     ev:(n,d,need)=>`🔎 فحص النبضات: سمعنا <b>${n}</b> نبضة قصيرة في ${d} ثانية. نحتاج ${need} على الأقل لنعدّها نشاطًا.`, ev_sus:" الصوت متواصل أكثر من اللازم، وليس نبضات متفرقة.", ev_silent:"🔎 فحص النبضات: التسجيل صامت تقريبًا. قرّب الميكروفون من مصدر الصوت.",
     veto:m=>`رجّح النموذج «${m}»، لكن فحص النبضات لم يسمع نبضات كافية، فاعتمدنا «لا مؤشرات». هذا لا يعني أن الصوت من نخلة، فالفحص يبحث عن نبضات اليرقات فقط.`,
+    inc_h:"ما قدرنا نحكم على هذا التسجيل", inc_air:"سمعنا هواءً أو صوتًا منخفضًا قويًا على الميكروفون، وهذا يغطي على أي نبضات. لا نقول «سليمة» ولا «مصابة» من تسجيل كهذا.", inc_silent:"التسجيل صامت تقريبًا، فلا شيء نحكم عليه.", inc_clip:"الميكروفون امتلأ بصوت عالٍ جدًا (نفخ أو قرب شديد)، فتشوّه الصوت.",
+    inc_tips_h:"أعد التسجيل هكذا:", inc_tips:["أبعد الميكروفون عن فمك وعن المروحة والتكييف، ولا تنفخ عليه.","غطِّه من جهة الهواء بقطعة قماش خفيفة أو سجّل في مكان ساكن.","قرّب مصدر الصوت (سماعة الجوال مثلًا) نحو 5 إلى 10 سم من الميكروفون، وسجّل 10 إلى 12 ثانية."],
+    tapnote:"تنبيه صادق: نقر الطاولة أو لوحة المفاتيح أو سقوط شيء هي أيضًا نبضات قصيرة، وقد لا يميّزها الفحص عن نبضات اليرقة. سجّل في مكان هادئ دون لمس الطاولة. هذا فحص أولي وليس تشخيصًا.",
     honest_sample:"هذه تسجيلات مُحاكاة بالحاسوب، وليست من نخلة حقيقية. النتيجة الجيدة هنا لا تثبت عمل الجهاز على نخلة حقيقية: انظر صفحة الأدلة.",
     honest_own:"النموذج تدرّب على تسجيلات مُحاكاة ولم يُختبر على نخيل حقيقي، فنتيجة تسجيلك للتجربة فقط وليست تشخيصًا. لا نزعم أنه يشخّص نخلتك.",
     s3:"الخطوة 3", h_trunk:"أين يُفحص الجذع؟", trunkSub:"جذع النخلة بثلاثة أبعاد مع نقطة تقريبية لمصدر الاهتزاز. يمكنك تدويره.", trunkNote:"عرض توضيحي: النقطة محاكاة وليست قياسًا، ولا تُظهر موضع يرقة حقيقية.",
-    s4:"الخطوة 4", h_rep:"تقرير «حارس» للعلاج", repSub:"«حارس» هو الذكاء الاصطناعي في نخلة قارد. يقرأ نتيجتك ويكتب لك توصية وخطة لمدة شهر، أسبوعًا بأسبوع. اضغط أي عنوان لتفتحه. التقرير تقديري ويحتاج تأكيد مختص.", repBtn:"✨ اطلب التقرير من حارس", repWait:"حارس يكتب التقرير…", repAgain:"أعد كتابة التقرير",
+    s4:"الخطوة 4", h_rep:"تقرير «حارس» للعلاج", repSub:"«حارس» هو الذكاء الاصطناعي في نخلة قارد. يقرأ نتيجتك ويكتب لك معناها وما تفعله اليوم، ثم خطة شهر كامل أسبوعًا بأسبوع، وفي كل أسبوع ما تفعله يومًا بيوم وما تتحقق منه في آخره. اضغط أي عنوان لتفتحه، وفي كل أسبوع زر تسأل منه «حارس» عن تفاصيله. التقرير تقديري ويحتاج تأكيد مختص.", repBtn:"✨ اطلب التقرير من حارس", repWait:"حارس يكتب التقرير…", repAgain:"أعد كتابة التقرير",
     show:"اعرض", hide:"أخفِ", openAll:"افتح الكل", closeAll:"أغلق الكل", src_ai:"كتبه حارس الآن (ذكاء اصطناعي)", src_tpl:"نسخة جاهزة من حارس، لأن الاتصال بالذكاء الاصطناعي غير متاح الآن",
     c1:"🤖 اسأل «حارس» عن مزرعتك", c2:"🔑 عندك الجهاز؟ ادخل موقعك الخاص", c3:"📚 الأدلة والمصادر" },
   en: { badge:"Prototype", h1:"Try the device yourself", sub:"Upload your own recording, record with the microphone, or pick a ready sound. The AI analyzes the sound and looks for larva pulses, then shows the result and the position on the trunk and writes you a full one-month treatment plan.",
@@ -219,7 +226,7 @@ const T = {
     samples:{healthy:"Healthy palm", early:"Early stage", moderate:"Moderate stage", advanced:"Advanced stage"},
     ts_h:"🔊 Test sounds for the judges", ts_s:"Simulated sounds we made ourselves, not a recording from a real palm. Play them from your phone near the device's microphone, or download and upload them.",
     ts:{dense:["Many pulses","Clear infestation: it should say infested"], sparse:["Few pulses","The start of an infestation: it should say infested"], air:["Air only","For comparison: it should say no sign"]}, play:"▶ Play", stop:"⏹ Stop", dl:"⬇ Download",
-    ht_h:"How do I try it in front of the judges?", ht:["Play the sound from your phone at full volume, with the speaker close to the laptop microphone (about 5 to 10 cm).","Choose “Record now”, press the button and record 10 to 12 seconds, then press to stop.","Wait for the result. The stage may differ a little with the speaker and the room, but “Air only” must not count as an infestation."],
+    ht_h:"How do I try it in front of the judges?", ht:["Play the sound from your phone at full volume, with the speaker close to the laptop microphone (about 5 to 10 cm).","Choose “Record now”, press the button and record 10 to 12 seconds, then press to stop.","Wait for the result. The stage may differ a little with the speaker and the room, but “Air only” must not count as an infestation.","Air test: blow or fan air near the microphone. The site will say “no sign” or “could not judge, record again”, never infested."],
     decoding:"Reading the recording…", analyzing:"Listening and analyzing with AI…", bad:"Could not read this recording. Try another file.", toobig:"The file is large. Choose one under 25 MB.", err:"Could not analyze right now. Please try again shortly.", limit:"Too many requests. Try again shortly.", off:"The public demo is switched off for now.",
     meta:(d,p)=>`Length ${d} s · analyzing up to 15 s · red marks = pulses we heard (${p})`,
     s2:"Step 2", h_res:"What did the AI hear?", ptitle:"The model's opinion",
@@ -228,10 +235,13 @@ const T = {
     conf:"confidence", risk:"Risk level", norisk:"No risk level for this sound", nf:"Noise filter: ", nf_on:"it suppressed an alarm because the sound does not look like larval activity.", nf_off:"it suppressed nothing.",
     ev:(n,d,need)=>`🔎 Pulse check: we heard <b>${n}</b> short pulses in ${d} seconds. We need at least ${need} to count it as activity.`, ev_sus:" The sound is too continuous to be separate pulses.", ev_silent:"🔎 Pulse check: the recording is almost silent. Hold the microphone closer to the sound source.",
     veto:m=>`The model leaned to “${m}”, but the pulse check did not hear enough pulses, so we kept “no sign”. This does not mean the sound is from a palm: the check only looks for larva pulses.`,
+    inc_h:"We could not judge this recording", inc_air:"We heard air or strong low-frequency sound on the microphone, which covers up any pulses. We do not say “healthy” or “infested” from a recording like this.", inc_silent:"The recording is almost silent, so there is nothing to judge.", inc_clip:"The microphone was overloaded by a very loud sound (blowing or very close), so the sound is distorted.",
+    inc_tips_h:"Record again like this:", inc_tips:["Keep the microphone away from your mouth, the fan and the air conditioner, and do not blow on it.","Cover it on the windward side with a light cloth, or record in a still place.","Hold the sound source (a phone speaker, say) about 5 to 10 cm from the microphone and record 10 to 12 seconds."],
+    tapnote:"An honest warning: tapping the table, a keyboard or a dropped object are also short pulses, and the check may not tell them from larva pulses. Record in a quiet place without touching the table. This is a first screening, not a diagnosis.",
     honest_sample:"These are recordings made by computer simulation, not from a real palm. A good result here does not prove the device works on a real palm: see the Evidence page.",
     honest_own:"The model was trained on simulated recordings and has not been tested on real palms, so the result for your own recording is for trying only, not a diagnosis. We do not claim it diagnoses your palm.",
     s3:"Step 3", h_trunk:"Where on the trunk?", trunkSub:"A 3D palm trunk with an approximate point for the vibration source. You can rotate it.", trunkNote:"Demonstration: the point is simulated, not a measurement, and does not show where a real larva is.",
-    s4:"Step 4", h_rep:"Haris's treatment report", repSub:"Haris is NakhlaGuard's AI. It reads your result and writes a recommendation and a one-month plan, week by week. Tap any heading to open it. The report is approximate and needs a specialist's confirmation.", repBtn:"✨ Ask Haris for the report", repWait:"Haris is writing the report…", repAgain:"Write the report again",
+    s4:"Step 4", h_rep:"Haris's treatment report", repSub:"Haris is NakhlaGuard's AI. It reads your result and writes what it means and what to do today, then a full one-month plan, week by week, with what to do day by day and what to check at the end of each week. Tap any heading to open it; each week has a button to ask Haris for more detail. The report is approximate and needs a specialist's confirmation.", repBtn:"✨ Ask Haris for the report", repWait:"Haris is writing the report…", repAgain:"Write the report again",
     show:"Show", hide:"Hide", openAll:"Open all", closeAll:"Close all", src_ai:"Written by Haris just now (AI)", src_tpl:"A ready-made version from Haris, because the AI is not reachable right now",
     c1:"🤖 Ask Haris about your farm", c2:"🔑 Have the device? Enter your private site", c3:"📚 Evidence and sources" },
   ur: { badge:"ابتدائی نمونہ", h1:"ڈیوائس خود آزمائیں", sub:"اپنی ریکارڈنگ اپ لوڈ کریں، مائیکروفون سے ریکارڈ کریں، یا تیار آواز چنیں۔ AI آواز کا تجزیہ کر کے سنڈی کی پلس تلاش کرتی ہے، پھر نتیجہ اور تنے پر مقام دکھاتی ہے اور پورے مہینے کا علاج کا منصوبہ لکھتی ہے۔",
@@ -242,7 +252,7 @@ const T = {
     samples:{healthy:"صحت مند کھجور", early:"ابتدائی مرحلہ", moderate:"درمیانہ مرحلہ", advanced:"شدید مرحلہ"},
     ts_h:"🔊 ججوں کے سامنے آزمانے کی آوازیں", ts_s:"یہ ہماری بنائی ہوئی سمولیشن آوازیں ہیں، حقیقی کھجور کی ریکارڈنگ نہیں۔ انہیں اپنے فون سے ڈیوائس کے مائیکروفون کے قریب چلائیں، یا ڈاؤن لوڈ کر کے اپ لوڈ کریں۔",
     ts:{dense:["زیادہ پلس","واضح حملہ: اسے حملہ کہنا چاہیے"], sparse:["کم پلس","حملے کی ابتدا: اسے حملہ کہنا چاہیے"], air:["صرف ہوا","موازنے کے لیے: اسے کوئی علامت نہیں کہنا چاہیے"]}, play:"▶ چلائیں", stop:"⏹ روکیں", dl:"⬇ ڈاؤن لوڈ",
-    ht_h:"ججوں کے سامنے کیسے آزماؤں؟", ht:["آواز اپنے فون سے پوری آواز میں چلائیں اور اسپیکر کو لیپ ٹاپ کے مائیکروفون کے قریب رکھیں (تقریباً 5 سے 10 سینٹی میٹر)۔","«ابھی ریکارڈ کریں» چنیں، بٹن دبائیں اور 10 سے 12 سیکنڈ ریکارڈ کریں، پھر روکنے کے لیے دبائیں۔","نتیجے کا انتظار کریں۔ اسپیکر اور کمرے کے مطابق مرحلہ تھوڑا بدل سکتا ہے، لیکن «صرف ہوا» حملہ شمار نہیں ہونا چاہیے۔"],
+    ht_h:"ججوں کے سامنے کیسے آزماؤں؟", ht:["آواز اپنے فون سے پوری آواز میں چلائیں اور اسپیکر کو لیپ ٹاپ کے مائیکروفون کے قریب رکھیں (تقریباً 5 سے 10 سینٹی میٹر)۔","«ابھی ریکارڈ کریں» چنیں، بٹن دبائیں اور 10 سے 12 سیکنڈ ریکارڈ کریں، پھر روکنے کے لیے دبائیں۔","نتیجے کا انتظار کریں۔ اسپیکر اور کمرے کے مطابق مرحلہ تھوڑا بدل سکتا ہے، لیکن «صرف ہوا» حملہ شمار نہیں ہونا چاہیے۔","ہوا کی آزمائش: مائیکروفون کے قریب پھونک ماریں یا ہوا چلائیں۔ سائٹ «کوئی علامت نہیں» یا «فیصلہ نہ ہو سکا، دوبارہ ریکارڈ کریں» کہے گی، حملہ نہیں۔"],
     decoding:"ریکارڈنگ پڑھی جا رہی ہے…", analyzing:"سن رہا ہے اور AI سے تجزیہ کر رہا ہے…", bad:"یہ ریکارڈنگ پڑھی نہیں جا سکی۔ دوسری فائل آزمائیں۔", toobig:"فائل بڑی ہے۔ 25 ایم بی سے چھوٹی چنیں۔", err:"ابھی تجزیہ نہیں ہو سکا۔ تھوڑی دیر بعد کوشش کریں۔", limit:"بہت زیادہ درخواستیں۔ تھوڑی دیر بعد کوشش کریں۔", off:"عوامی ڈیمو فی الحال بند ہے۔",
     meta:(d,p)=>`دورانیہ ${d} سیکنڈ · 15 سیکنڈ تک کا تجزیہ · سرخ نشان = سنی ہوئی پلس (${p})`,
     s2:"مرحلہ 2", h_res:"AI نے کیا سنا؟", ptitle:"ماڈل کی رائے",
@@ -251,10 +261,13 @@ const T = {
     conf:"اعتماد", risk:"خطرے کی سطح", norisk:"اس آواز کے لیے خطرے کی سطح نہیں", nf:"شور فلٹر: ", nf_on:"اس نے الارم روکا کیونکہ آواز سنڈی کی سرگرمی جیسی نہیں۔", nf_off:"اس نے کچھ نہیں روکا۔",
     ev:(n,d,need)=>`🔎 پلس کی جانچ: ہم نے ${d} سیکنڈ میں <b>${n}</b> مختصر پلس سنیں۔ سرگرمی شمار کرنے کے لیے کم از کم ${need} چاہییں۔`, ev_sus:" آواز اتنی مسلسل ہے کہ الگ الگ پلس نہیں لگتیں۔", ev_silent:"🔎 پلس کی جانچ: ریکارڈنگ تقریباً خاموش ہے۔ مائیکروفون کو آواز کے ماخذ کے قریب لائیں۔",
     veto:m=>`ماڈل «${m}» کی طرف مائل تھا، لیکن پلس کی جانچ نے کافی پلس نہیں سنیں، اس لیے ہم نے «کوئی علامت نہیں» رکھا۔ اس کا مطلب یہ نہیں کہ آواز کھجور کی ہے: جانچ صرف سنڈی کی پلس تلاش کرتی ہے۔`,
+    inc_h:"ہم اس ریکارڈنگ کا فیصلہ نہیں کر سکے", inc_air:"مائیکروفون پر ہوا یا تیز کم تعدد آواز سنائی دی، جو کسی بھی پلس کو ڈھانپ دیتی ہے۔ ایسی ریکارڈنگ سے ہم نہ «صحت مند» کہتے ہیں نہ «حملہ»۔", inc_silent:"ریکارڈنگ تقریباً خاموش ہے، اس لیے فیصلے کے لیے کچھ نہیں۔", inc_clip:"مائیکروفون بہت تیز آواز سے بھر گیا (پھونک یا بہت قریب)، اس لیے آواز بگڑ گئی۔",
+    inc_tips_h:"اس طرح دوبارہ ریکارڈ کریں:", inc_tips:["مائیکروفون کو منہ، پنکھے اور اے سی سے دور رکھیں اور اس پر پھونک نہ ماریں۔","ہوا کی طرف سے ہلکے کپڑے سے ڈھانپیں یا پرسکون جگہ ریکارڈ کریں۔","آواز کا ماخذ (مثلاً فون کا اسپیکر) مائیکروفون سے تقریباً 5 سے 10 سینٹی میٹر پر رکھیں اور 10 سے 12 سیکنڈ ریکارڈ کریں۔"],
+    tapnote:"ایمانداری سے ایک انتباہ: میز پر ٹھک ٹھکانا، کی بورڈ یا کسی چیز کا گرنا بھی مختصر پلس ہیں، اور جانچ انہیں سنڈی کی پلس سے ہمیشہ الگ نہیں کر پاتی۔ پرسکون جگہ ریکارڈ کریں اور میز کو نہ چھوئیں۔ یہ ابتدائی جانچ ہے، تشخیص نہیں۔",
     honest_sample:"یہ کمپیوٹر سمولیشن سے بنی ریکارڈنگز ہیں، حقیقی کھجور کی نہیں۔ یہاں اچھا نتیجہ ثابت نہیں کرتا کہ ڈیوائس حقیقی کھجور پر کام کرتی ہے: ثبوت کا صفحہ دیکھیں۔",
     honest_own:"ماڈل سمولیشن ریکارڈنگز پر تربیت یافتہ ہے اور حقیقی کھجوروں پر آزمایا نہیں گیا، اس لیے آپ کی اپنی ریکارڈنگ کا نتیجہ صرف آزمائش کے لیے ہے، تشخیص نہیں۔ ہم دعویٰ نہیں کرتے کہ یہ آپ کی کھجور کی تشخیص کرتا ہے۔",
     s3:"مرحلہ 3", h_trunk:"تنے پر کہاں؟", trunkSub:"کھجور کا تھری ڈی تنا، کمپن کے ماخذ کے تقریبی نقطے کے ساتھ۔ آپ اسے گھما سکتے ہیں۔", trunkNote:"وضاحتی نمونہ: نقطہ سمولیشن ہے، پیمائش نہیں، اور حقیقی سنڈی کا مقام نہیں بتاتا۔",
-    s4:"مرحلہ 4", h_rep:"«حارس» کی علاج رپورٹ", repSub:"«حارس» نخلہ گارڈ کی AI ہے۔ وہ آپ کا نتیجہ پڑھ کر سفارش اور ایک مہینے کا منصوبہ، ہفتہ بہ ہفتہ، لکھتی ہے۔ کسی بھی عنوان پر دبا کر کھولیں۔ رپورٹ تقریبی ہے اور ماہر کی تصدیق چاہتی ہے۔", repBtn:"✨ حارس سے رپورٹ مانگیں", repWait:"حارس رپورٹ لکھ رہی ہے…", repAgain:"رپورٹ دوبارہ لکھیں",
+    s4:"مرحلہ 4", h_rep:"«حارس» کی علاج رپورٹ", repSub:"«حارس» نخلہ گارڈ کی AI ہے۔ وہ آپ کا نتیجہ پڑھ کر اس کا مطلب اور آج کیا کرنا ہے لکھتی ہے، پھر پورے مہینے کا منصوبہ، ہفتہ بہ ہفتہ، جس میں دن بہ دن کام اور ہر ہفتے کے آخر میں جانچنے کی باتیں ہیں۔ کسی بھی عنوان پر دبا کر کھولیں؛ ہر ہفتے میں «حارس» سے مزید تفصیل پوچھنے کا بٹن ہے۔ رپورٹ تقریبی ہے اور ماہر کی تصدیق چاہتی ہے۔", repBtn:"✨ حارس سے رپورٹ مانگیں", repWait:"حارس رپورٹ لکھ رہی ہے…", repAgain:"رپورٹ دوبارہ لکھیں",
     show:"کھولیں", hide:"بند کریں", openAll:"سب کھولیں", closeAll:"سب بند کریں", src_ai:"ابھی حارس نے لکھی (AI)", src_tpl:"حارس کی طرف سے تیار نسخہ، کیونکہ AI سے ابھی رابطہ نہیں ہو سکا",
     c1:"🤖 «حارس» سے اپنے باغ کے بارے میں پوچھیں", c2:"🔑 ڈیوائس ہے؟ اپنی نجی سائٹ میں جائیں", c3:"📚 ثبوت اور ذرائع" }
 };
@@ -264,7 +277,7 @@ const $ = id => document.getElementById(id);
 const STAGES = ['healthy','early','moderate','advanced'], SR = 4000, WIN = 15, MAXREC = 15, MINREC = 3;
 const WAVS = {healthy:'1_healthy.wav', early:'2_early.wav', moderate:'3_moderate.wav', advanced:'4_advanced.wav'};
 const TESTS = [['dense','weevil_dense_sim.wav'], ['sparse','weevil_sparse_sim.wav'], ['air','air_noise_sim.wav']];
-let wavBlob = null, lastRes = null, source = 'sample', busy = false, lastWaveData = null, lastDur = 0, recording = false, playing = null, lastReport = null;
+let wavClipped = false, wavBlob = null, lastRes = null, source = 'sample', busy = false, lastWaveData = null, lastDur = 0, recording = false, playing = null, lastReport = null;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function getLang(){ let l = null; try{ l = localStorage.getItem('nakhlaguard-lang'); }catch(e){} return ['ar','en','ur'].includes(l) ? l : 'ar'; }
 function setLang(l){
@@ -314,6 +327,9 @@ async function toWav(arrayBuffer, trimStart){
   const dur = buf.duration;
   const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(dur * SR)), SR);
   const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start();
+  const raw = buf.getChannelData(0); let clipRun = 0, clipN = 0;                // overloaded microphone: flat tops, seen before the small 4 kHz copy hides them
+  for(let i = 1; i < raw.length - 1; i += 1){ if(Math.abs(raw[i]) >= 0.985 && Math.abs(raw[i-1]) >= 0.985 && Math.abs(raw[i+1]) >= 0.985) clipRun++; clipN++; }
+  wavClipped = clipN > 0 && clipRun / clipN > 0.002;
   const rendered = await off.startRendering();
   let x = rendered.getChannelData(0);
   if(trimStart){ const cut = Math.min(Math.floor(trimStart * SR), Math.max(0, x.length - SR)); x = x.slice(cut); }   // drop the button click at the start of a microphone recording
@@ -371,7 +387,7 @@ async function onFile(f){
 }
 async function analyze(){
   const t = T[getLang()]; setStatus(t.analyzing, true); $('scan').classList.add('go');
-  const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav');
+  const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav'); fd.append('clipped', wavClipped ? '1' : '0');
   try {
     const r = await fetch('/demo/analyze', { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
     if(!r.ok){ setStatus(r.status === 429 ? t.limit : r.status === 403 ? t.off : r.status === 422 ? t.bad : t.err); return; }
@@ -391,8 +407,19 @@ function gaugeSvg(p){
   <text x="120" y="104" text-anchor="middle" font-size="34" font-weight="700" fill="#14201B">${Math.round(p * 100)}%</text></svg>`;
 }
 function showResult(j, scroll){
-  const l = getLang(), t = T[l], k = j.stage, v = t.v[k], ev = j.evidence || {};
+  const l = getLang(), t = T[l], k = j.stage, v = t.v[k], ev = j.evidence || {}, inc = !!j.inconclusive;
   $('result').classList.remove('hide');
+  $('resGrid').classList.toggle('hide', inc); $('repCard').classList.toggle('hide', inc); $('evid').classList.toggle('hide', inc);
+  if(inc){                                           // the recording itself is the problem (air / rumble / overload / silence): say so, do not say "healthy" or "infested"
+    const why = ev.silent || j.reason === 'silent' ? t.inc_silent : (ev.clipped && !ev.air_on_mic ? t.inc_clip : t.inc_air);
+    $('verdict').innerHTML = `<div class="verdict v-inc"><div class="vi">🔁</div><div><h3>${esc(t.inc_h)}</h3><p>${esc(why)}</p></div></div>`;
+    $('veto').classList.remove('hide'); $('veto').innerHTML = `<b>${esc(t.inc_tips_h)}</b><ul style="padding-inline-start:22px">` + t.inc_tips.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+    $('tapnote').textContent = t.tapnote; $('honest').textContent = source === 'sample' ? t.honest_sample : t.honest_own;
+    $('trunkCard').classList.add('hide');
+    if(scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  $('tapnote').textContent = source === 'sample' ? '' : t.tapnote;
   $('verdict').innerHTML = `<div class="verdict v-${k}"><div class="vi">${v[0]}</div><div><h3>${esc(v[1])}</h3><p>${esc(v[2])}</p></div></div>`;
   $('veto').classList.toggle('hide', !j.vetoed); if(j.vetoed) $('veto').textContent = t.veto(t.stage[j.model_stage] || j.model_stage);
   const pr = {}; STAGES.forEach(s => pr[s] = (j.probabilities && j.probabilities[s]) || 0);
@@ -416,12 +443,15 @@ function renderReport(r, keepOpen){
   const t = T[getLang()], openIds = keepOpen ? [...document.querySelectorAll('#report .acc.open')].map(a => a.dataset.id) : [];
   let html = `<div class="rhead">${esc(r.headline)}</div><span class="src ${r.source === 'ai' ? '' : 'tpl'}">${esc(r.source === 'ai' ? t.src_ai : t.src_tpl)}</span>`;
   html += `<div class="rtools"><span></span><button type="button" class="lnk" id="allBtn">${esc(t.openAll)}</button></div>`;
-  const card = (c, n) => `<div class="acc ${openIds.includes(c.id) ? 'open' : ''}" data-id="${c.id}"><button type="button" class="acc-h" aria-expanded="${openIds.includes(c.id)}">${n ? `<span class="no">${n}</span>` : ''}<span class="tt">${esc(c.title)}${c.focus ? `<small>${esc(c.focus)}</small>` : ''}</span><span class="acc-t">${esc(openIds.includes(c.id) ? t.hide : t.show)}</span></button><div class="acc-b" ${openIds.includes(c.id) ? '' : 'hidden'}>${listHtml(c.items)}</div></div>`;
+  const lb = r.labels || {};
+  const body = c => (c.goal ? `<p class="wgoal">${esc(lb.goal || '')}: ${esc(c.goal)}</p>` : '') + listHtml(c.items) + (c.check ? `<div class="wcheck">✅ <b>${esc(lb.check || '')}:</b> ${esc(c.check)}</div>` : '') + (c.ask ? `<a class="askbtn" href="/assistant.html?q=${encodeURIComponent(c.ask)}">🤖 ${esc(lb.ask_btn || '')}</a>` : '');
+  const card = (c, n) => `<div class="acc ${openIds.includes(c.id) ? 'open' : ''}" data-id="${c.id}"><button type="button" class="acc-h" aria-expanded="${openIds.includes(c.id)}">${n ? `<span class="no">${n}</span>` : ''}<span class="tt">${esc(c.title)}${c.focus ? `<small>${esc(c.focus)}</small>` : ''}</span><span class="acc-t">${esc(openIds.includes(c.id) ? t.hide : t.show)}</span></button><div class="acc-b" ${openIds.includes(c.id) ? '' : 'hidden'}>${body(c)}</div></div>`;
   const cards = r.cards || [], plan = cards.filter(c => c.group === 'plan');
-  html += cards.filter(c => c.id === 'today').map(c => card(c)).join('');
+  html += cards.filter(c => c.id === 'meaning' || c.id === 'today').map(c => card(c)).join('');
   html += `<div class="gtitle">${esc(r.plan_title || '')}</div>` + plan.map((c, i) => card(c, i + 1)).join('');
-  html += cards.filter(c => c.id === 'watch').map(c => card(c)).join('');
+  html += cards.filter(c => c.id === 'cost' || c.id === 'watch').map(c => card(c)).join('');
   html += `<div class="rnote">${esc(r.note || '')}</div>`;
+  if(r.ask_all) html += `<div class="askall"><a class="askbtn" href="/assistant.html?q=${encodeURIComponent(r.ask_all)}">🤖 ${esc(lb.ask_all || '')}</a></div>`;
   $('report').innerHTML = html;
   $('report').querySelectorAll('.acc-h').forEach(b => b.addEventListener('click', () => toggleAcc(b.parentElement)));
   $('allBtn').addEventListener('click', () => { const all = document.querySelectorAll('#report .acc'), anyClosed = [...all].some(a => !a.classList.contains('open')); all.forEach(a => setAcc(a, anyClosed)); $('allBtn').textContent = anyClosed ? t.closeAll : t.openAll; });
@@ -431,10 +461,10 @@ function toggleAcc(a){ setAcc(a, !a.classList.contains('open')); }
 async function writeReport(){
   if(!wavBlob) return; const l = getLang(), t = T[l], btn = $('repBtn');
   btn.disabled = true; btn.textContent = t.repWait; $('report').innerHTML = '<div class="soft"><span class="spin"></span>' + esc(t.repWait) + '</div>'; lastReport = null;
-  const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav'); fd.append('language', l);
+  const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav'); fd.append('language', l); fd.append('clipped', wavClipped ? '1' : '0');
   try {
     const r = await fetch('/demo/report', { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
-    if(!r.ok || !j.report){ $('report').innerHTML = `<div class="note">${esc(r.status === 403 ? t.off : r.status === 422 ? t.bad : t.err)}</div>`; }
+    if(!r.ok || !j.report){ $('report').innerHTML = `<div class="note">${esc(r.status === 403 ? t.off : r.status === 422 ? t.bad : r.status === 409 ? t.inc_h : t.err)}</div>`; }
     else { lastReport = j.report; renderReport(j.report, false); }
   } catch(e){ $('report').innerHTML = `<div class="note">${esc(t.err)}</div>`; }
   btn.disabled = false; btn.textContent = lastReport ? t.repAgain : t.repBtn;
