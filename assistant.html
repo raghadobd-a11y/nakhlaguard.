@@ -31,6 +31,7 @@
   .chat .msg.wait{ opacity:.75 }
   .chat .tool{ background:#EAF3EE; color:#123A2E; border:1px solid #cfe3d8; border-radius:999px; padding:5px 14px; font-size:.84rem; margin-inline:14px; align-self:flex-start }
   .log{ display:grid; gap:8px; max-height:60vh; overflow:auto; padding:2px } .log:empty{ display:none }
+  .cachedtag{ font-size:.74rem; color:var(--palm-deep); opacity:.75; margin:-4px 4px 6px }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
   .chips button{ font:inherit; font-size:.82rem; cursor:pointer; color:var(--palm-deep); background:#fff; border:1px solid var(--sand-deep); border-radius:999px; padding:5px 12px }
   .chips button:hover{ border-color:var(--palm) }
@@ -95,7 +96,7 @@
 const T = {
   ar: { badge:"الذكاء الاصطناعي التوكيلي", h1:"«حارس»، مساعدك الذكي", sub:"يفهم سؤالك بلغتك، ويقرّر بنفسه أي أدوات يستعمل ليقرأ بيانات المزرعة، ثم يجيب مما وجده. ويجيب أيضًا عن الأسئلة العامة في سوسة النخيل ومكافحتها.",
     h_how:"كيف يعمل", steps:[["تسأل","مثلًا: أي نخلة تحتاج انتباهي؟ أو: اشرح لي الأسبوع الثاني من خطة العلاج."],["يختار أدواته","قائمة النخيل، تفاصيل نخلة، النخيل التي تحتاج انتباهًا، النخيل المتأخر فحصها، جهة الاتصال الاحتياطية. وقد يستعمل أكثر من أداة على التوالي."],["يجيب من بيانات حقيقية","لا يخمّن أرقامًا ولا مواقع. وفي هذه التجربة يقرأ فقط ولا ينفّذ أي فعل نيابةً عنك."]],
-    h_chat:"جرّب «حارس» الآن", ph:"اسأل عن مزرعة العرض أو عن سوسة النخيل…", send:"أرسل", wait:"يفكّر…", you:"أنت", bot:"حارس", err:"تعذّر الاتصال. حاول بعد قليل.", limit:"وصلت للحد المسموح للتجربة. جرّب لاحقًا.", off:"التجربة العامة متوقفة حاليًا.",
+    h_chat:"جرّب «حارس» الآن", ph:"اسأل عن مزرعة العرض أو عن سوسة النخيل…", send:"أرسل", cached:"✓ إجابة محفوظة من حارس لنفس السؤال على نفس مزرعة العرض", wait:"يفكّر…", slow:"ما زال يعمل… قد يستغرق لحظات إن كان الخادم يستيقظ.", you:"أنت", bot:"حارس", err:"تعذّر الاتصال. حاول بعد قليل.", limit:"وصلت للحد المسموح للتجربة. جرّب لاحقًا.", off:"التجربة العامة متوقفة حاليًا.",
     chips:["أي نخلة تحتاج عناية؟","أي نخلة متأخر فحصها؟","حدّثني عن Palm-E05","كيف أحمي النخيل المجاورة لنخلة مصابة؟","ماذا أنتبه له عند تقليم النخيل؟"],
     hint:"السؤال جاهز من تقريرك. اضغط «أرسل» ليجيب «حارس».",
     note:"التجربة على مزرعة عرض فيها 5 نخلات وهمية، وليست بياناتك. عدد الأسئلة محدود لكل زائر. الأسئلة العامة يجيب عنها «حارس» بمعرفته العامة، وهي إرشادات وليست وصفة علاج، والقرار لمختص بعد الفحص الميداني.",
@@ -103,7 +104,7 @@ const T = {
     steps_tools:{list_palms:"📋 يعرض النخيل", get_palm_details:"🔍 يقرأ تفاصيل {p}", palms_needing_attention:"🔎 يبحث عن النخيل التي تحتاج انتباهًا", palms_due_for_recheck:"📅 يبحث عن النخيل المستحقة لإعادة الفحص", get_farm_contact:"📞 يقرأ جهة الاتصال الاحتياطية للمزرعة"} },
   en: { badge:"Agentic AI", h1:"Haris, your smart assistant", sub:"It understands your question in your language, decides by itself which tools to use to read the farm data, and answers from what it found. It also answers general questions about the red palm weevil and its control.",
     h_how:"How it works", steps:[["You ask","For example: which palm needs my attention? Or: explain week 2 of the treatment plan."],["It chooses its tools","List of palms, one palm in detail, palms that need attention, palms due for a re-check, the farm's backup contact. It may use several tools in a row."],["It answers from real data","It does not guess numbers or locations. In this demo it only reads; it does not act on your behalf."]],
-    h_chat:"Try Haris now", ph:"Ask about the demo farm or about the red palm weevil…", send:"Send", wait:"Thinking…", you:"You", bot:"Haris", err:"Could not connect. Please try again shortly.", limit:"The demo limit was reached. Please try later.", off:"The public demo is switched off for now.",
+    h_chat:"Try Haris now", ph:"Ask about the demo farm or about the red palm weevil…", send:"Send", cached:"✓ Haris's saved answer to the same question on the same demo farm", wait:"Thinking…", slow:"Still working… this can take a few seconds if the server is waking up.", you:"You", bot:"Haris", err:"Could not connect. Please try again shortly.", limit:"The demo limit was reached. Please try later.", off:"The public demo is switched off for now.",
     chips:["Which palm needs attention?","Which palms are due for a re-check?","Tell me about Palm-E05","How do I protect the palms next to an infested one?","What should I watch for when pruning palms?"],
     hint:"The question is ready from your report. Press “Send” for Haris to answer.",
     note:"The demo runs on a sample farm of 5 made-up palms, not your data. The number of questions per visitor is limited. General questions are answered from Haris's general knowledge; this is guidance, not a treatment prescription, and the decision belongs to a specialist after the field inspection.",
@@ -111,7 +112,7 @@ const T = {
     steps_tools:{list_palms:"📋 Looking at the palms", get_palm_details:"🔍 Reading the details of {p}", palms_needing_attention:"🔎 Looking for the palms that need attention", palms_due_for_recheck:"📅 Looking for the palms due for a re-check", get_farm_contact:"📞 Reading the farm backup contact"} },
   ur: { badge:"ایجنٹک AI", h1:"«حارس»، آپ کا ذہین معاون", sub:"یہ آپ کا سوال آپ کی زبان میں سمجھتا ہے، خود طے کرتا ہے کہ فارم کا ڈیٹا پڑھنے کے لیے کون سے ٹول استعمال کرے، اور جو ملا اس سے جواب دیتا ہے۔ یہ ریڈ پام ویول اور اس کے کنٹرول کے عمومی سوالوں کے جواب بھی دیتا ہے۔",
     h_how:"یہ کیسے کام کرتا ہے", steps:[["آپ پوچھتے ہیں","مثلاً: کون سی کھجور کو میری توجہ چاہیے؟ یا: علاج کے منصوبے کا دوسرا ہفتہ سمجھائیں۔"],["یہ اپنے ٹول چنتا ہے","کھجوروں کی فہرست، ایک کھجور کی تفصیل، توجہ طلب کھجوریں، دوبارہ جانچ کی منتظر کھجوریں، فارم کا متبادل رابطہ۔ یہ ایک کے بعد ایک کئی ٹول بھی استعمال کر سکتا ہے۔"],["یہ اصل ڈیٹا سے جواب دیتا ہے","یہ اعداد یا مقامات کا اندازہ نہیں لگاتا۔ اس ڈیمو میں یہ صرف پڑھتا ہے اور آپ کی طرف سے کوئی عمل نہیں کرتا۔"]],
-    h_chat:"ابھی «حارس» آزمائیں", ph:"ڈیمو فارم یا ریڈ پام ویول کے بارے میں پوچھیں…", send:"بھیجیں", wait:"سوچ رہا ہے…", you:"آپ", bot:"حارس", err:"رابطہ نہیں ہو سکا۔ تھوڑی دیر بعد کوشش کریں۔", limit:"ڈیمو کی حد پوری ہو گئی۔ بعد میں کوشش کریں۔", off:"عوامی ڈیمو فی الحال بند ہے۔",
+    h_chat:"ابھی «حارس» آزمائیں", ph:"ڈیمو فارم یا ریڈ پام ویول کے بارے میں پوچھیں…", send:"بھیجیں", cached:"✓ اسی سوال پر اسی ڈیمو فارم کے لیے حارس کا محفوظ شدہ جواب", wait:"سوچ رہا ہے…", slow:"ابھی کام جاری ہے… سرور جاگ رہا ہو تو چند لمحے لگ سکتے ہیں۔", you:"آپ", bot:"حارس", err:"رابطہ نہیں ہو سکا۔ تھوڑی دیر بعد کوشش کریں۔", limit:"ڈیمو کی حد پوری ہو گئی۔ بعد میں کوشش کریں۔", off:"عوامی ڈیمو فی الحال بند ہے۔",
     chips:["کس کھجور کو توجہ چاہیے؟","کون سی کھجوریں دوبارہ جانچ کی منتظر ہیں؟","Palm-E05 کے بارے میں بتائیں","متاثرہ کھجور کے پاس والی کھجوروں کو کیسے بچاؤں؟","کھجور کی کٹائی میں کس بات کا خیال رکھوں؟"],
     hint:"آپ کی رپورٹ سے سوال تیار ہے۔ «بھیجیں» دبائیں تاکہ «حارس» جواب دے۔",
     note:"یہ ڈیمو 5 فرضی کھجوروں کے نمونہ فارم پر چلتا ہے، آپ کا ڈیٹا نہیں۔ ہر وزیٹر کے لیے سوالوں کی تعداد محدود ہے۔ عمومی سوالوں کے جواب «حارس» اپنے عمومی علم سے دیتا ہے؛ یہ رہنمائی ہے، علاج کا نسخہ نہیں، اور فیصلہ میدانی معائنے کے بعد ماہر کا ہے۔",
@@ -146,15 +147,21 @@ function send(q){
   add('msg you', q); $('inp').value = '';
   const wait = add('msg bot wait', t.wait);
   const fd = new FormData(); fd.append('message', q); fd.append('language', getLang());
-  fetch('/demo/agent', { method: 'POST', body: fd })
+  // never hang forever: after 8 s say it is still working; after 75 s give up politely (the server itself answers from ready-made data after about 22 s)
+  const slowTimer = setTimeout(() => { wait.textContent = t.slow; }, 8000);
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const killTimer = setTimeout(() => { try{ ctl && ctl.abort(); }catch(e){} }, 75000);
+  fetch('/demo/agent', { method: 'POST', body: fd, signal: ctl ? ctl.signal : undefined })
     .then(r => r.json().catch(() => ({})).then(j => ({ ok: r.ok, st: r.status, j })))
     .then(x => {
+      clearTimeout(slowTimer); clearTimeout(killTimer);
       wait.remove();
       if(!x.ok){ add('msg bot', x.st === 403 ? t.off : x.st === 429 ? t.limit : t.err); return; }
       (x.j.trace || []).forEach(tr => add('tool', stepText(tr)));
-      add('msg bot', x.j.answer || t.err);
+      const b = add('msg bot', x.j.answer || t.err);
+      if(x.j.cached){ const c = document.createElement('div'); c.className = 'cachedtag'; c.textContent = t.cached; $('log').appendChild(c); $('log').scrollTop = $('log').scrollHeight; }
     })
-    .catch(() => { wait.remove(); add('msg bot', t.err); })
+    .catch(() => { clearTimeout(slowTimer); clearTimeout(killTimer); wait.remove(); add('msg bot', t.err); })
     .then(() => { busy = false; $('btn').disabled = false; });
 }
 $('form').addEventListener('submit', e => { e.preventDefault(); send($('inp').value); });

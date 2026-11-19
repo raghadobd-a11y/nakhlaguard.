@@ -146,6 +146,18 @@ def serve_nav():
     return FileResponse(os.path.join(BASE_DIR, "nav.js"), media_type="application/javascript")
 
 
+_BG_TASKS = []
+
+
+@app.on_event("startup")
+async def _warm_demo_assistant():
+    """Fill the public assistant's answer cache in the background (does not delay start-up). Off with NAKHLA_DEMO_PREWARM=off."""
+    import asyncio
+    langs = demo_agent.prewarm_languages()
+    if langs and os.environ.get("GEMINI_API_KEY") and demo_agent.demo_enabled():
+        _BG_TASKS.append(asyncio.create_task(demo_agent.prewarm(langs)))
+
+
 @app.get("/health")
 def health():
     # gemini_key_set: true/false only (never the key). Lets you check on Render whether the AI key reached the server.
@@ -1121,7 +1133,7 @@ async def demo_analyze(audio: UploadFile = File(...), clipped: str = Form("0")):
 
 
 @app.post("/demo/report")
-async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), language: str = Form("en"), clipped: str = Form("0")):
+async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), language: str = Form("en"), clipped: str = Form("0"), mode: str = Form("full")):
     """Public try page: the treatment report (headings that open, a one-month plan week by week) for the same recording.
     Written by the AI assistant (Gemini) when a key is set and the per-visitor / daily caps allow it; otherwise the ready-made
     version in demo_report.py is returned and labelled as such. Nothing is stored."""
@@ -1135,6 +1147,10 @@ async def demo_report_endpoint(request: Request, audio: UploadFile = File(...), 
     language = language if language in ("ar", "en", "ur") else "en"
     api_key = os.environ.get("GEMINI_API_KEY")
     ask_ai = None
+    if mode == "ready":
+        # instant first version: the page shows it at once and then asks for the AI version (mode "full"); it never touches the AI or the caps
+        report = await demo_report.make_report(result["stage"], result.get("risk"), result.get("evidence"), language, None)
+        return JSONResponse({"report": {**report, "source": "quick"}})
     if api_key and demo_agent.allow_report(demo_agent.client_ip(request)):
         async def ask_ai(system, user):
             from gemini_client import call_gemini

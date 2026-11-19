@@ -24,7 +24,7 @@ if r.status_code != 200:
     print(r.text[:300].replace("\n", " ")); print("-> status 400/401/403 usually means a wrong, deleted or restricted key"); sys.exit(1)
 flash = [m["name"].replace("models/", "") for m in r.json().get("models", []) if "generateContent" in m.get("supportedGenerationMethods", []) and "flash" in m["name"]]
 print("flash models available to this key:", flash[:20])
-cands = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"] + [n for n in flash if n not in ("gemini-3.8-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite")][:3]
+cands = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"] + [n for n in flash if n not in ("gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite")][:3]
 print("\nmodel                                    result")
 for m in cands:
     t0 = time.time()

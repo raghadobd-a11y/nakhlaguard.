@@ -138,7 +138,6 @@
         <h3 id="ts_h"></h3>
         <div class="soft" style="margin-top:0" id="ts_s"></div>
         <div id="tslist"></div>
-        <div class="howto"><b id="ht_h"></b><ol id="ht_l"></ol></div>
       </div>
     </div>
 
@@ -200,7 +199,6 @@ const T = {
     samples:{healthy:"نخلة سليمة", early:"مرحلة مبكرة", moderate:"مرحلة متوسطة", advanced:"مرحلة متقدمة"},
     ts_h:"🔊 أصوات للتجربة أمام المحكم", ts_s:"أصوات محاكاة صنعناها بأنفسنا، وليست تسجيلًا من نخلة حقيقية. شغّلها من جوالك قرب ميكروفون الجهاز، أو حمّلها وارفعها.",
     ts:{dense:["نبضات كثيفة","إصابة واضحة: يجب أن يقول إصابة"], sparse:["نبضات قليلة","بداية إصابة: يجب أن يقول إصابة"], air:["هواء فقط","للمقارنة: يجب أن يقول لا مؤشرات"]}, play:"▶ شغّل", stop:"⏹ أوقف", dl:"⬇ حمّل",
-    ht_h:"كيف أجرّب أمام المحكم؟", ht:["شغّل الصوت من جوالك بأعلى مستوى، وقرّب السماعة من ميكروفون اللابتوب (نحو 5 إلى 10 سم).","اختر «سجّل الآن» واضغط الزر وسجّل 10 إلى 12 ثانية، ثم اضغط للإيقاف.","انتظر النتيجة. قد تختلف المرحلة قليلًا حسب السماعة والغرفة، لكن «هواء فقط» يجب ألا يُعدّ إصابة.","اختبار الهواء: انفخ أو حرّك الهواء قرب الميكروفون. سيقول الموقع «لا مؤشرات» أو «ما قدرنا نحكم، أعد التسجيل»، ولن يقول إصابة."],
     decoding:"جارٍ قراءة التسجيل…", analyzing:"يُصغي ويحلّل بالذكاء الاصطناعي…", bad:"تعذّر قراءة هذا التسجيل. جرّب ملفًا آخر.", toobig:"الملف كبير. اختر ملفًا أصغر من 25 ميغابايت.", err:"تعذّر التحليل الآن. حاول بعد قليل.", limit:"طلبات كثيرة. حاول بعد قليل.", off:"التجربة العامة متوقفة حاليًا.",
     meta:(d,p)=>`المدة ${d} ثانية · نحلّل حتى 15 ثانية · العلامات الحمراء = نبضات سمعناها (${p})`,
     s2:"الخطوة 2", h_res:"ماذا سمع الذكاء الاصطناعي؟", ptitle:"رأي النموذج",
@@ -216,7 +214,7 @@ const T = {
     honest_own:"النموذج تدرّب على تسجيلات مُحاكاة ولم يُختبر على نخيل حقيقي، فنتيجة تسجيلك للتجربة فقط وليست تشخيصًا. لا نزعم أنه يشخّص نخلتك.",
     s3:"الخطوة 3", h_trunk:"أين يُفحص الجذع؟", trunkSub:"جذع النخلة بثلاثة أبعاد مع نقطة تقريبية لمصدر الاهتزاز. يمكنك تدويره.", trunkNote:"عرض توضيحي: النقطة محاكاة وليست قياسًا، ولا تُظهر موضع يرقة حقيقية.",
     s4:"الخطوة 4", h_rep:"تقرير «حارس» للعلاج", repSub:"«حارس» هو الذكاء الاصطناعي في نخلة قارد. يقرأ نتيجتك ويكتب لك معناها وما تفعله اليوم، ثم خطة شهر كامل أسبوعًا بأسبوع، وفي كل أسبوع ما تفعله يومًا بيوم وما تتحقق منه في آخره. اضغط أي عنوان لتفتحه، وفي كل أسبوع زر تسأل منه «حارس» عن تفاصيله. التقرير تقديري ويحتاج تأكيد مختص.", repBtn:"✨ اطلب التقرير من حارس", repWait:"حارس يكتب التقرير…", repAgain:"أعد كتابة التقرير",
-    show:"اعرض", hide:"أخفِ", openAll:"افتح الكل", closeAll:"أغلق الكل", src_ai:"كتبه حارس الآن (ذكاء اصطناعي)", src_tpl:"نسخة جاهزة من حارس، لأن الاتصال بالذكاء الاصطناعي غير متاح الآن",
+    show:"اعرض", hide:"أخفِ", openAll:"افتح الكل", closeAll:"أغلق الكل", src_ai:"كتبه حارس الآن (ذكاء اصطناعي)", src_tpl:"نسخة جاهزة من حارس، لأن الاتصال بالذكاء الاصطناعي غير متاح الآن", src_quick:"نسخة جاهزة تقرؤها الآن، و«حارس» يكتب نسخة مفصّلة لحالتك…",
     c1:"🤖 اسأل «حارس» عن مزرعتك", c2:"🔑 عندك الجهاز؟ ادخل موقعك الخاص", c3:"📚 الأدلة والمصادر" },
   en: { badge:"Prototype", h1:"Try the device yourself", sub:"Upload your own recording, record with the microphone, or pick a ready sound. The AI analyzes the sound and looks for larva pulses, then shows the result and the position on the trunk and writes you a full one-month treatment plan.",
     s1:"Step 1", h_in:"Give the device a sound",
@@ -226,7 +224,6 @@ const T = {
     samples:{healthy:"Healthy palm", early:"Early stage", moderate:"Moderate stage", advanced:"Advanced stage"},
     ts_h:"🔊 Test sounds for the judges", ts_s:"Simulated sounds we made ourselves, not a recording from a real palm. Play them from your phone near the device's microphone, or download and upload them.",
     ts:{dense:["Many pulses","Clear infestation: it should say infested"], sparse:["Few pulses","The start of an infestation: it should say infested"], air:["Air only","For comparison: it should say no sign"]}, play:"▶ Play", stop:"⏹ Stop", dl:"⬇ Download",
-    ht_h:"How do I try it in front of the judges?", ht:["Play the sound from your phone at full volume, with the speaker close to the laptop microphone (about 5 to 10 cm).","Choose “Record now”, press the button and record 10 to 12 seconds, then press to stop.","Wait for the result. The stage may differ a little with the speaker and the room, but “Air only” must not count as an infestation.","Air test: blow or fan air near the microphone. The site will say “no sign” or “could not judge, record again”, never infested."],
     decoding:"Reading the recording…", analyzing:"Listening and analyzing with AI…", bad:"Could not read this recording. Try another file.", toobig:"The file is large. Choose one under 25 MB.", err:"Could not analyze right now. Please try again shortly.", limit:"Too many requests. Try again shortly.", off:"The public demo is switched off for now.",
     meta:(d,p)=>`Length ${d} s · analyzing up to 15 s · red marks = pulses we heard (${p})`,
     s2:"Step 2", h_res:"What did the AI hear?", ptitle:"The model's opinion",
@@ -242,7 +239,7 @@ const T = {
     honest_own:"The model was trained on simulated recordings and has not been tested on real palms, so the result for your own recording is for trying only, not a diagnosis. We do not claim it diagnoses your palm.",
     s3:"Step 3", h_trunk:"Where on the trunk?", trunkSub:"A 3D palm trunk with an approximate point for the vibration source. You can rotate it.", trunkNote:"Demonstration: the point is simulated, not a measurement, and does not show where a real larva is.",
     s4:"Step 4", h_rep:"Haris's treatment report", repSub:"Haris is NakhlaGuard's AI. It reads your result and writes what it means and what to do today, then a full one-month plan, week by week, with what to do day by day and what to check at the end of each week. Tap any heading to open it; each week has a button to ask Haris for more detail. The report is approximate and needs a specialist's confirmation.", repBtn:"✨ Ask Haris for the report", repWait:"Haris is writing the report…", repAgain:"Write the report again",
-    show:"Show", hide:"Hide", openAll:"Open all", closeAll:"Close all", src_ai:"Written by Haris just now (AI)", src_tpl:"A ready-made version from Haris, because the AI is not reachable right now",
+    show:"Show", hide:"Hide", openAll:"Open all", closeAll:"Close all", src_ai:"Written by Haris just now (AI)", src_tpl:"A ready-made version from Haris, because the AI is not reachable right now", src_quick:"A ready-made version to read now, while Haris writes a detailed one for your case…",
     c1:"🤖 Ask Haris about your farm", c2:"🔑 Have the device? Enter your private site", c3:"📚 Evidence and sources" },
   ur: { badge:"ابتدائی نمونہ", h1:"ڈیوائس خود آزمائیں", sub:"اپنی ریکارڈنگ اپ لوڈ کریں، مائیکروفون سے ریکارڈ کریں، یا تیار آواز چنیں۔ AI آواز کا تجزیہ کر کے سنڈی کی پلس تلاش کرتی ہے، پھر نتیجہ اور تنے پر مقام دکھاتی ہے اور پورے مہینے کا علاج کا منصوبہ لکھتی ہے۔",
     s1:"مرحلہ 1", h_in:"ڈیوائس کو آواز دیں",
@@ -252,7 +249,6 @@ const T = {
     samples:{healthy:"صحت مند کھجور", early:"ابتدائی مرحلہ", moderate:"درمیانہ مرحلہ", advanced:"شدید مرحلہ"},
     ts_h:"🔊 ججوں کے سامنے آزمانے کی آوازیں", ts_s:"یہ ہماری بنائی ہوئی سمولیشن آوازیں ہیں، حقیقی کھجور کی ریکارڈنگ نہیں۔ انہیں اپنے فون سے ڈیوائس کے مائیکروفون کے قریب چلائیں، یا ڈاؤن لوڈ کر کے اپ لوڈ کریں۔",
     ts:{dense:["زیادہ پلس","واضح حملہ: اسے حملہ کہنا چاہیے"], sparse:["کم پلس","حملے کی ابتدا: اسے حملہ کہنا چاہیے"], air:["صرف ہوا","موازنے کے لیے: اسے کوئی علامت نہیں کہنا چاہیے"]}, play:"▶ چلائیں", stop:"⏹ روکیں", dl:"⬇ ڈاؤن لوڈ",
-    ht_h:"ججوں کے سامنے کیسے آزماؤں؟", ht:["آواز اپنے فون سے پوری آواز میں چلائیں اور اسپیکر کو لیپ ٹاپ کے مائیکروفون کے قریب رکھیں (تقریباً 5 سے 10 سینٹی میٹر)۔","«ابھی ریکارڈ کریں» چنیں، بٹن دبائیں اور 10 سے 12 سیکنڈ ریکارڈ کریں، پھر روکنے کے لیے دبائیں۔","نتیجے کا انتظار کریں۔ اسپیکر اور کمرے کے مطابق مرحلہ تھوڑا بدل سکتا ہے، لیکن «صرف ہوا» حملہ شمار نہیں ہونا چاہیے۔","ہوا کی آزمائش: مائیکروفون کے قریب پھونک ماریں یا ہوا چلائیں۔ سائٹ «کوئی علامت نہیں» یا «فیصلہ نہ ہو سکا، دوبارہ ریکارڈ کریں» کہے گی، حملہ نہیں۔"],
     decoding:"ریکارڈنگ پڑھی جا رہی ہے…", analyzing:"سن رہا ہے اور AI سے تجزیہ کر رہا ہے…", bad:"یہ ریکارڈنگ پڑھی نہیں جا سکی۔ دوسری فائل آزمائیں۔", toobig:"فائل بڑی ہے۔ 25 ایم بی سے چھوٹی چنیں۔", err:"ابھی تجزیہ نہیں ہو سکا۔ تھوڑی دیر بعد کوشش کریں۔", limit:"بہت زیادہ درخواستیں۔ تھوڑی دیر بعد کوشش کریں۔", off:"عوامی ڈیمو فی الحال بند ہے۔",
     meta:(d,p)=>`دورانیہ ${d} سیکنڈ · 15 سیکنڈ تک کا تجزیہ · سرخ نشان = سنی ہوئی پلس (${p})`,
     s2:"مرحلہ 2", h_res:"AI نے کیا سنا؟", ptitle:"ماڈل کی رائے",
@@ -268,7 +264,7 @@ const T = {
     honest_own:"ماڈل سمولیشن ریکارڈنگز پر تربیت یافتہ ہے اور حقیقی کھجوروں پر آزمایا نہیں گیا، اس لیے آپ کی اپنی ریکارڈنگ کا نتیجہ صرف آزمائش کے لیے ہے، تشخیص نہیں۔ ہم دعویٰ نہیں کرتے کہ یہ آپ کی کھجور کی تشخیص کرتا ہے۔",
     s3:"مرحلہ 3", h_trunk:"تنے پر کہاں؟", trunkSub:"کھجور کا تھری ڈی تنا، کمپن کے ماخذ کے تقریبی نقطے کے ساتھ۔ آپ اسے گھما سکتے ہیں۔", trunkNote:"وضاحتی نمونہ: نقطہ سمولیشن ہے، پیمائش نہیں، اور حقیقی سنڈی کا مقام نہیں بتاتا۔",
     s4:"مرحلہ 4", h_rep:"«حارس» کی علاج رپورٹ", repSub:"«حارس» نخلہ گارڈ کی AI ہے۔ وہ آپ کا نتیجہ پڑھ کر اس کا مطلب اور آج کیا کرنا ہے لکھتی ہے، پھر پورے مہینے کا منصوبہ، ہفتہ بہ ہفتہ، جس میں دن بہ دن کام اور ہر ہفتے کے آخر میں جانچنے کی باتیں ہیں۔ کسی بھی عنوان پر دبا کر کھولیں؛ ہر ہفتے میں «حارس» سے مزید تفصیل پوچھنے کا بٹن ہے۔ رپورٹ تقریبی ہے اور ماہر کی تصدیق چاہتی ہے۔", repBtn:"✨ حارس سے رپورٹ مانگیں", repWait:"حارس رپورٹ لکھ رہی ہے…", repAgain:"رپورٹ دوبارہ لکھیں",
-    show:"کھولیں", hide:"بند کریں", openAll:"سب کھولیں", closeAll:"سب بند کریں", src_ai:"ابھی حارس نے لکھی (AI)", src_tpl:"حارس کی طرف سے تیار نسخہ، کیونکہ AI سے ابھی رابطہ نہیں ہو سکا",
+    show:"کھولیں", hide:"بند کریں", openAll:"سب کھولیں", closeAll:"سب بند کریں", src_ai:"ابھی حارس نے لکھی (AI)", src_tpl:"حارس کی طرف سے تیار نسخہ، کیونکہ AI سے ابھی رابطہ نہیں ہو سکا", src_quick:"ابھی پڑھنے کے لیے تیار نسخہ، جبکہ «حارس» آپ کے کیس کے لیے تفصیلی نسخہ لکھ رہی ہے…",
     c1:"🤖 «حارس» سے اپنے باغ کے بارے میں پوچھیں", c2:"🔑 ڈیوائس ہے؟ اپنی نجی سائٹ میں جائیں", c3:"📚 ثبوت اور ذرائع" }
 };
 
@@ -296,7 +292,7 @@ function paint(){
   if(!recording) $('recmsg').textContent = t.rec_idle;
   $('samples').innerHTML = STAGES.map(k => `<button type="button" data-s="${k}">${esc(t.samples[k])}</button>`).join('');
   $('samples').querySelectorAll('button').forEach(b => b.addEventListener('click', () => loadSample(b.dataset.s)));
-  $('ts_h').textContent = t.ts_h; $('ts_s').textContent = t.ts_s; $('ht_h').textContent = t.ht_h; $('ht_l').innerHTML = t.ht.map(x => `<li>${esc(x)}</li>`).join('');
+  $('ts_h').textContent = t.ts_h; $('ts_s').textContent = t.ts_s;
   $('tslist').innerHTML = TESTS.map(([k, f]) => `<div class="ts"><div><b>${esc(t.ts[k][0])}</b><small>${esc(t.ts[k][1])}</small></div><button type="button" data-p="${f}" class="${playing === f ? 'on' : ''}">${esc(playing === f ? t.stop : t.play)}</button><a href="/demo-wav/${f}" download="${f}">${esc(t.dl)}</a></div>`).join('');
   $('tslist').querySelectorAll('button[data-p]').forEach(b => b.addEventListener('click', () => togglePlay(b.dataset.p)));
   $('s2').textContent = t.s2; $('h_res').textContent = t.h_res; $('ptitle').textContent = t.ptitle; $('s3').textContent = t.s3; $('h_trunk').textContent = t.h_trunk; $('trunkSub').textContent = t.trunkSub; $('trunkNote').textContent = t.trunkNote;
@@ -391,7 +387,7 @@ async function analyze(){
   try {
     const r = await fetch('/demo/analyze', { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
     if(!r.ok){ setStatus(r.status === 429 ? t.limit : r.status === 403 ? t.off : r.status === 422 ? t.bad : t.err); return; }
-    lastRes = j; lastReport = null; $('report').innerHTML = ''; setStatus('');
+    lastRes = j; lastReport = null; reportSeq++; $('repBtn').disabled = false; $('repBtn').textContent = T[getLang()].repBtn; $('report').innerHTML = ''; setStatus('');
     drawWave(lastWaveData, j.evidence ? j.evidence.times_s : null); $('wavemeta').innerHTML = metaHtml();
     showResult(j, true);
   } catch(e){ setStatus(t.err); }
@@ -441,7 +437,8 @@ window.addEventListener('message', e => { if(e.data && e.data.type === 'nk-embed
 function listHtml(items){ return '<ul>' + (items || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ul>'; }
 function renderReport(r, keepOpen){
   const t = T[getLang()], openIds = keepOpen ? [...document.querySelectorAll('#report .acc.open')].map(a => a.dataset.id) : [];
-  let html = `<div class="rhead">${esc(r.headline)}</div><span class="src ${r.source === 'ai' ? '' : 'tpl'}">${esc(r.source === 'ai' ? t.src_ai : t.src_tpl)}</span>`;
+  const srcTxt = r.source === 'ai' ? t.src_ai : r.source === 'quick' ? t.src_quick : t.src_tpl;
+  let html = `<div class="rhead">${esc(r.headline)}</div><span class="src ${r.source === 'ai' ? '' : 'tpl'}">${r.source === 'quick' ? '<span class="spin"></span>' : ''}${esc(srcTxt)}</span>`;
   html += `<div class="rtools"><span></span><button type="button" class="lnk" id="allBtn">${esc(t.openAll)}</button></div>`;
   const lb = r.labels || {};
   const body = c => (c.goal ? `<p class="wgoal">${esc(lb.goal || '')}: ${esc(c.goal)}</p>` : '') + listHtml(c.items) + (c.check ? `<div class="wcheck">✅ <b>${esc(lb.check || '')}:</b> ${esc(c.check)}</div>` : '') + (c.ask ? `<a class="askbtn" href="/assistant.html?q=${encodeURIComponent(c.ask)}">🤖 ${esc(lb.ask_btn || '')}</a>` : '');
@@ -458,16 +455,27 @@ function renderReport(r, keepOpen){
 }
 function setAcc(a, open){ const t = T[getLang()]; a.classList.toggle('open', open); a.querySelector('.acc-b').hidden = !open; a.querySelector('.acc-h').setAttribute('aria-expanded', open); a.querySelector('.acc-t').textContent = open ? t.hide : t.show; }
 function toggleAcc(a){ setAcc(a, !a.classList.contains('open')); }
+let reportSeq = 0;
+function reportForm(l, mode){ const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav'); fd.append('language', l); fd.append('clipped', wavClipped ? '1' : '0'); fd.append('mode', mode); return fd; }
 async function writeReport(){
-  if(!wavBlob) return; const l = getLang(), t = T[l], btn = $('repBtn');
+  if(!wavBlob) return; const l = getLang(), t = T[l], btn = $('repBtn'), seq = ++reportSeq;
   btn.disabled = true; btn.textContent = t.repWait; $('report').innerHTML = '<div class="soft"><span class="spin"></span>' + esc(t.repWait) + '</div>'; lastReport = null;
-  const fd = new FormData(); fd.append('audio', wavBlob, 'clip.wav'); fd.append('language', l); fd.append('clipped', wavClipped ? '1' : '0');
+  // step 1: the ready-made version appears at once (no AI, no waiting); step 2: Haris's own version replaces it when it arrives
   try {
-    const r = await fetch('/demo/report', { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
-    if(!r.ok || !j.report){ $('report').innerHTML = `<div class="note">${esc(r.status === 403 ? t.off : r.status === 422 ? t.bad : r.status === 409 ? t.inc_h : t.err)}</div>`; }
-    else { lastReport = j.report; renderReport(j.report, false); }
-  } catch(e){ $('report').innerHTML = `<div class="note">${esc(t.err)}</div>`; }
-  btn.disabled = false; btn.textContent = lastReport ? t.repAgain : t.repBtn;
+    const r = await fetch('/demo/report', { method: 'POST', body: reportForm(l, 'ready') }); const j = await r.json().catch(() => ({}));
+    if(seq !== reportSeq) return;
+    if(!r.ok || !j.report){ $('report').innerHTML = `<div class="note">${esc(r.status === 403 ? t.off : r.status === 422 ? t.bad : r.status === 409 ? t.inc_h : t.err)}</div>`; btn.disabled = false; btn.textContent = t.repBtn; return; }
+    lastReport = j.report; renderReport(j.report, false);
+  } catch(e){ if(seq === reportSeq){ $('report').innerHTML = `<div class="note">${esc(t.err)}</div>`; btn.disabled = false; btn.textContent = t.repBtn; } return; }
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, kill = setTimeout(() => { try{ ctl && ctl.abort(); }catch(e){} }, 90000);
+  try {
+    const r = await fetch('/demo/report', { method: 'POST', body: reportForm(l, 'full'), signal: ctl ? ctl.signal : undefined }); const j = await r.json().catch(() => ({}));
+    if(seq !== reportSeq) return;
+    if(r.ok && j.report){ lastReport = j.report; renderReport(j.report, true); }
+    else if(lastReport){ renderReport({ ...lastReport, source: 'template' }, true); }
+  } catch(e){ if(seq === reportSeq && lastReport){ renderReport({ ...lastReport, source: 'template' }, true); } }
+  clearTimeout(kill);
+  if(seq === reportSeq){ btn.disabled = false; btn.textContent = lastReport ? t.repAgain : t.repBtn; }
 }
 $('repBtn').addEventListener('click', writeReport);
 

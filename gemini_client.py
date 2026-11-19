@@ -15,11 +15,16 @@ Gemini أحيانًا يرجع:
 نموذج، فنرميه فورًا بدون إضاعة وقت بتجربة نماذج إضافية.
 """
 import asyncio
+import os
 import time
 import httpx
 
 # نموذج أساسي جديد وقوي، ثم بديلان أقدم وأخف لو الأول مزدحم
-FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"]
+# للتغيير بدون تعديل الكود: متغير البيئة GEMINI_MODELS، أسماء مفصولة بفواصل بالترتيب، مثل: gemini-3.5-flash-lite,gemini-3.8-flash
+# (الأسرع أولًا يعطي إجابات أسرع، والأقوى أولًا يعطي نصًا أغنى). الافتراضي: الأقوى ثم الأسرع ثم الأخف.
+# gemini-2.5-flash أُخرج من القائمة لأن Google أعلنت تقييد الوصول لنماذج 2.5 على من استعملها سابقًا فقط.
+_ENV_MODELS = [m.strip() for m in os.environ.get("GEMINI_MODELS", "").split(",") if m.strip()]
+FALLBACK_MODELS = _ENV_MODELS or ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
 
 TRANSIENT_STATUS_CODES = {429, 503}
 

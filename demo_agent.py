@@ -14,15 +14,21 @@ Settings (environment variables, all optional):
     NAKHLA_PUBLIC_DEMO=off          turns the public demo off (default: on)
     NAKHLA_DEMO_IP_HOURLY=8         questions per visitor per hour
     NAKHLA_DEMO_DAILY=300           questions for the whole site per day
+    NAKHLA_DEMO_AI_TIMEOUT=22       seconds to wait for the AI before the ready-made answer (demo_fallback.py) is shown instead
+    NAKHLA_DEMO_PREWARM=ar          ask the 5 suggested questions once at start-up: ar (default), "ar,en", all, or off
+When a cap is reached, the AI is slow or it fails, the visitor gets a labelled ready-made answer instead of an error.
 """
+import asyncio
 import collections
 import os
 import time
 from datetime import datetime, timedelta
 
 from agent import run_agent
+from demo_fallback import ready_answer
 
 MAX_MESSAGE_CHARS = 300
+DEFAULT_TIMEOUT_S = 22   # the assistant may use several AI steps; after this many seconds the ready-made answer is shown
 _IP_HITS = collections.defaultdict(collections.deque)
 _DAY_HITS = collections.deque()
 
@@ -32,6 +38,13 @@ def _int_env(name, default):
         return max(1, int(os.environ.get(name, default)))
     except ValueError:
         return default
+
+
+def _timeout():
+    try:
+        return max(5.0, float(os.environ.get("NAKHLA_DEMO_AI_TIMEOUT", DEFAULT_TIMEOUT_S)))
+    except ValueError:
+        return float(DEFAULT_TIMEOUT_S)
 
 
 def _iso(days_ago):
@@ -126,6 +139,80 @@ def _allowed(ip, now):
     return True
 
 
+# ---------------------------------------------------------------------------
+# Speed: a real AI answer is saved for a while and shown instantly when the SAME question is asked again on the same sample farm, and the
+# five suggested questions are asked once in the background when the server starts (so even the first click is instant). Nothing here is
+# invented: it is the AI's own earlier answer, flagged "cached" so the page can say so. Failed or fallback answers are never saved.
+# ---------------------------------------------------------------------------
+CACHE_TTL_S = 6 * 3600      # the sample farm's "days ago" wording ages, so saved answers expire
+CACHE_MAX = 200
+_CACHE = collections.OrderedDict()
+WARM_QUESTIONS = {   # must equal the chips of assistant.html (a test checks this)
+    "ar": ["أي نخلة تحتاج عناية؟", "أي نخلة متأخر فحصها؟", "حدّثني عن Palm-E05", "كيف أحمي النخيل المجاورة لنخلة مصابة؟", "ماذا أنتبه له عند تقليم النخيل؟"],
+    "en": ["Which palm needs attention?", "Which palms are due for a re-check?", "Tell me about Palm-E05", "How do I protect the palms next to an infested one?", "What should I watch for when pruning palms?"],
+    "ur": ["کس کھجور کو توجہ چاہیے؟", "کون سی کھجوریں دوبارہ جانچ کی منتظر ہیں؟", "Palm-E05 کے بارے میں بتائیں", "متاثرہ کھجور کے پاس والی کھجوروں کو کیسے بچاؤں؟", "کھجور کی کٹائی میں کس بات کا خیال رکھوں؟"],
+}
+
+
+def _key(language, message):
+    return (language, " ".join(message.lower().split()))
+
+
+def _cache_get(language, message, now=None):
+    now = time.time() if now is None else now
+    k = _key(language, message)
+    hit = _CACHE.get(k)
+    if not hit:
+        return None
+    if now - hit[0] > CACHE_TTL_S:
+        _CACHE.pop(k, None)
+        return None
+    _CACHE.move_to_end(k)
+    return hit[1]
+
+
+def _cache_put(language, message, answer, trace, now=None):
+    now = time.time() if now is None else now
+    k = _key(language, message)
+    _CACHE[k] = (now, {"answer": answer, "trace": trace})
+    _CACHE.move_to_end(k)
+    while len(_CACHE) > CACHE_MAX:
+        _CACHE.popitem(last=False)
+
+
+def prewarm_languages():
+    """NAKHLA_DEMO_PREWARM: "ar" (default), "ar,en", "all", or "off"."""
+    v = os.environ.get("NAKHLA_DEMO_PREWARM", "ar").strip().lower()
+    if v in ("off", "0", "false", "no", ""):
+        return []
+    if v == "all":
+        return ["ar", "en", "ur"]
+    return [x.strip() for x in v.split(",") if x.strip() in WARM_QUESTIONS]
+
+
+async def prewarm(languages, gap_s=3.0):
+    """Ask the suggested questions once, one after the other (gentle on the AI's rate limit), and keep the good answers."""
+    failures = 0
+    for lang in languages:
+        for q in WARM_QUESTIONS[lang]:
+            if failures >= 2:
+                print("[NakhlaGuard demo] warm-up stopped: the AI did not answer twice in a row")
+                return
+            try:
+                r = await asyncio.wait_for(run_agent(q, TOOL_EXECUTOR, [], language=lang), timeout=40)
+                a = (r.get("answer") or "").strip()
+                if a and not a.startswith("⚠️"):
+                    _cache_put(lang, q, a, r.get("trace", []))
+                    failures = 0
+                else:
+                    failures += 1
+            except Exception as e:
+                failures += 1
+                print(f"[NakhlaGuard demo] warm-up question failed: {type(e).__name__}: {e}")
+            await asyncio.sleep(gap_s)
+    print(f"[NakhlaGuard demo] warm-up done: {len(_CACHE)} saved answers")
+
+
 async def demo_chat(message, language, ip):
     """Returns (http_status, json_payload)."""
     if os.environ.get("NAKHLA_PUBLIC_DEMO", "on").strip().lower() in ("off", "0", "false", "no"):
@@ -134,10 +221,32 @@ async def demo_chat(message, language, ip):
     if not message:
         return 400, {"error": "empty", "message": "Empty question."}
     language = language if language in ("ar", "en", "ur") else "en"
+    saved = _cache_get(language, message)
+    if saved:   # instant, and it does not use the visitor's question allowance
+        return 200, {"answer": saved["answer"], "trace": saved["trace"], "demo": True, "cached": True}
     if not _allowed(ip, time.time()):
-        return 429, {"error": "demo_limit", "message": "The demo question limit was reached. Please try again later."}
-    result = await run_agent(message, TOOL_EXECUTOR, [], language=language)
-    return 200, {"answer": result.get("answer", ""), "trace": result.get("trace", []), "demo": True}
+        # The cap protects the AI quota, but a visitor (or a judge on a shared venue Wi-Fi) should not meet an error: the ready-made answer costs nothing.
+        try:
+            fb = ready_answer(message, language, TOOL_EXECUTOR)
+            return 200, {"answer": fb["answer"], "trace": fb["trace"], "demo": True, "fallback": True, "limited": True}
+        except Exception:
+            return 429, {"error": "demo_limit", "message": "The demo question limit was reached. Please try again later."}
+    # Never leave a visitor (or a judge) waiting: if the AI is slow, busy, over its limit or raises, answer from the sample data instead.
+    result = None
+    try:
+        result = await asyncio.wait_for(run_agent(message, TOOL_EXECUTOR, [], language=language), timeout=_timeout())
+    except Exception as e:   # includes asyncio.TimeoutError
+        print(f"[NakhlaGuard demo] assistant fell back to a ready-made answer: {type(e).__name__}: {e}")
+    answer = ((result or {}).get("answer") or "").strip()
+    if not answer or answer.startswith("⚠️"):
+        try:
+            fb = ready_answer(message, language, TOOL_EXECUTOR)
+            return 200, {"answer": fb["answer"], "trace": fb["trace"], "demo": True, "fallback": True}
+        except Exception as e:
+            print(f"[NakhlaGuard demo] ready-made answer failed: {type(e).__name__}: {e}")
+            return 200, {"answer": answer or "⚠️", "trace": (result or {}).get("trace", []), "demo": True}
+    _cache_put(language, message, answer, result.get("trace", []))
+    return 200, {"answer": answer, "trace": result.get("trace", []), "demo": True}
 
 
 # ---------------------------------------------------------------------------

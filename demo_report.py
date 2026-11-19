@@ -17,8 +17,11 @@ Each week also carries a ready question for the assistant ("ask"), so the page c
 
 General guidance only: no product names, no doses, no promise of a cure, nothing that replaces the field inspection by a specialist.
 """
+import asyncio
 import json
 import re
+
+AI_REPORT_TIMEOUT_S = 38   # the page already shows the ready-made version while the AI writes, so it can wait; after this the labelled ready-made report stays
 
 STAGES = ("healthy", "early", "moderate", "advanced")
 
@@ -555,8 +558,9 @@ async def make_report(stage, risk, evidence, language, ask_ai):
         return base
     system, user = build_prompt(stage, risk, evidence, language)
     try:
-        p = parse_ai_json(await ask_ai(system, user))
-    except Exception as e:
+        # a judge must not stare at a spinner: after this many seconds the ready-made (labelled) report is shown instead
+        p = parse_ai_json(await asyncio.wait_for(ask_ai(system, user), timeout=AI_REPORT_TIMEOUT_S))
+    except Exception as e:   # includes asyncio.TimeoutError
         print(f"[NakhlaGuard demo] AI report failed: {type(e).__name__}: {e}")
         p = None
     if not p:
