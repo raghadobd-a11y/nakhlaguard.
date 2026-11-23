@@ -25,6 +25,7 @@
                             المزارع عن نخيله عبر استدعاء أدوات حقيقية على
                             قاعدة البيانات (مو نص مبرمج مسبقًا) - شوفي agent.py
 """
+import asyncio
 import os
 import json
 import hashlib
@@ -564,6 +565,33 @@ async def predict_audio(audio: UploadFile = File(...)):
     return JSONResponse(result)
 
 
+_CLASS_TO_STAGE = {"سليم": "healthy", "مبكرة": "early", "متوسطة": "moderate", "متقدمة": "advanced"}
+
+
+async def _owner_report(fusion_result, language):
+    """Owner site: the same structured report as the public try page (meaning, today, a four-week plan week by week with the actions
+    day by day, cost of waiting, when to call a specialist). Written by the AI assistant when the key works; otherwise (no key, AI busy,
+    unusable answer) the ready-made version in demo_report.py is returned and labelled as such, so this part is never empty.
+    Never raises."""
+    language = language if language in ("ar", "en", "ur") else "en"
+    stage = _CLASS_TO_STAGE.get(fusion_result.get("final_class"), "healthy")
+    api_key = os.environ.get("GEMINI_API_KEY")
+    ask_ai = None
+    if api_key:
+        async def ask_ai(system, user):
+            from gemini_client import call_gemini
+            payload = {"system_instruction": {"parts": [{"text": system}]},
+                       "contents": [{"role": "user", "parts": [{"text": user}]}],
+                       "generationConfig": {"responseMimeType": "application/json", "temperature": 0.4}}
+            data = await call_gemini(payload, api_key)
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+    try:
+        return await demo_report.make_report(stage, fusion_result.get("final_score"), None, language, ask_ai)
+    except Exception as e:
+        print(f"[NakhlaGuard] owner report failed: {type(e).__name__}: {e}")
+        return demo_report.template_report(stage, language)
+
+
 @app.post("/predict-full")
 async def predict_full(
     audio: UploadFile = File(...),
@@ -617,8 +645,10 @@ async def predict_full(
             and fusion_result["final_class"] != "سليم"):
         sensor_location = demo_location(palm_id)
     history = get_history(palm_id)
-    recommendation = await get_gemini_recommendation(
-        fusion_result, palm_id, history, saved_location, language, age_years, visual_notes
+    # the written recommendation (used by the alert) and the structured week-by-week report are asked at the same time
+    recommendation, report = await asyncio.gather(
+        get_gemini_recommendation(fusion_result, palm_id, history, saved_location, language, age_years, visual_notes),
+        _owner_report(fusion_result, language),
     )
     reading_id = save_reading(palm_id, fusion_result["final_class"], fusion_result["final_score"])
 
@@ -644,6 +674,7 @@ async def predict_full(
         "audio_result": audio_result,
         "fusion_result": fusion_result,
         "recommendation": recommendation,
+        "report": report,
         "history": get_history(palm_id),
         "location": saved_location,
         "sensor_location": sensor_location,
