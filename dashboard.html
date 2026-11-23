@@ -158,6 +158,17 @@
 <script>
 const API_HOST = window.location.host;
 let soundEnabled = false;
+try{ if(localStorage.getItem('nk-sound') === '1') soundEnabled = true; }catch(e){}   // يُحفظ بين الزيارات، فلا تحتاج الضغط في كل مرة
+let AC = null;   // سياق صوت واحد يُفتح بأول لمسة (المتصفحات تمنع الصوت قبل ذلك)
+function unlockAudio(){
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext; if(!Ctx) return;
+    if(!AC) AC = new Ctx();
+    if(AC.state === 'suspended') AC.resume();
+  }catch(e){}
+}
+['pointerdown','touchend','click','keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, {passive:true}));
+function notifyAllowed(){ return typeof Notification !== "undefined" && Notification.permission === "granted"; }
 const CLASS_MAP = { "سليم":"healthy","مبكرة":"early","متوسطة":"moderate","متقدمة":"advanced" };
 const CLASS_LABEL = {
   en: { healthy:"Healthy", early:"Early stage", moderate:"Moderate", advanced:"Advanced" },
@@ -256,8 +267,11 @@ loadFarmContact();
 document.getElementById('enableSound').onclick = async () => {
   if (typeof Notification !== "undefined" && Notification.requestPermission) { try{ await Notification.requestPermission(); }catch(e){} }
   soundEnabled = true;
+  try{ localStorage.setItem('nk-sound', '1'); }catch(e){}
+  unlockAudio(); playBeep(1);   // صوت تجريبي قصير للتأكد
   document.getElementById('enableSound').textContent = UI_TEXT[getLang()].enabled;
 };
+window.addEventListener('load', () => { if(soundEnabled) document.getElementById('enableSound').textContent = UI_TEXT[getLang()].enabled; });
 
 Object.assign(UI_TEXT.en, {
   mapTitle:"📍 Estimated vibration-source position on the trunk (3D)",
@@ -288,15 +302,28 @@ function alertMapHtml(data, lang){
   return `<div class="alert-map"><div class="alert-map-title">${t.mapTitle}</div><div class="alert-map-note ${mode === 'demo' ? 'demo' : ''}">${note}</div><iframe class="alert-frame" src="${src}" title="trunk 3D map" loading="lazy"></iframe></div>`;
 }
 window.addEventListener('message', e => { if (e.data && e.data.type === 'nk-embed-height') document.querySelectorAll('.alert-frame').forEach(f => { if (f.contentWindow === e.source) f.style.height = Math.max(300, e.data.h + 8) + 'px'; }); });
-function playBeep(){
+function playBeep(times = 3){
   try{
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.2, ctx.currentTime);
-    o.start(); o.stop(ctx.currentTime + 0.4);
+    unlockAudio();
+    if(!AC) return;
+    const now = AC.currentTime;
+    for(let i = 0; i < times; i++){
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.connect(g); g.connect(AC.destination); o.frequency.value = 880;
+      const st = now + i * 0.55;
+      g.gain.setValueAtTime(0.25, st); g.gain.setValueAtTime(0.0001, st + 0.4);
+      o.start(st); o.stop(st + 0.4);
+    }
   }catch(e){}
+}
+// صوت + اهتزاز + إشعار المتصفح عند وصول تنبيه جديد (الإشعار يعمل متى مُنحت الصلاحية، حتى لو لم يُضغط الزر في هذه الزيارة)
+function alertEffects(palmId, severityLabel){
+  const lang = getLang();
+  if(soundEnabled) playBeep();
+  try{ if(navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); }catch(e){}
+  if(notifyAllowed()){
+    try{ new Notification(UI_TEXT[lang].alertTitle(palmId), { body: UI_TEXT[lang].alertBody(severityLabel) }); }catch(e){}
+  }
 }
 
 function urWeekDay(t){ return getLang() === 'ur' ? t.replace(/^(\s*)Week\s+(\d+)/gim, '$1ہفتہ $2').replace(/^(\s*)Day\s+(\d+)/gim, '$1دن $2') : t; }
@@ -307,6 +334,9 @@ function prettyRecBase(t){
     .replace(/^\s*((?:Day|اليوم)\s*\d+)\s*\|\s*(.+)$/gim, '     $1: $2');
 }
 const liveShown = new Set();   // نخلات وصل لها تنبيه حي في هذه الجلسة
+const liveAt = {};             // وقت آخر تنبيه حي لكل نخلة
+const knownKeys = new Set();   // قراءات رأيناها من الاستعلام الدوري (نخلة|وقت الفحص)
+let firstPoll = true, lastSig = null;
 function addAlertCard(data){
   document.getElementById('emptyState')?.remove();
   if(!data.saved){
@@ -338,14 +368,7 @@ function addAlertCard(data){
   `;
   container.prepend(card);
 
-  if(soundEnabled && !data.saved){
-    playBeep();
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification(UI_TEXT[lang].alertTitle(data.palm_id), {
-        body: UI_TEXT[lang].alertBody(severityLabel),
-      });
-    }
-  }
+  if(!data.saved){ liveAt[data.palm_id] = Date.now(); alertEffects(data.palm_id, severityLabel); }
 }
 
 Object.assign(UI_TEXT.en, { savedNote:"Saved from the latest check of this palm (shown again because this page was opened or woke up after the check)." });
@@ -355,31 +378,57 @@ Object.assign(UI_TEXT.ur, { savedNote:"اس کھجور کے آخری معائن�
 // ---------- تنبيهات محفوظة: آخر حالة متوسطة/متقدمة لكل نخلة، حتى لو لم تكن الصفحة مفتوحة وقت الفحص ----------
 async function loadSavedAlerts(){
   try{
-    const res = await fetch('/palms');
+    const res = await fetch('/palms', { cache:'no-store' });
     if(!res.ok) return;
     const data = await res.json();
     const list = Array.isArray(data) ? data : (data.palms || []);
-    document.querySelectorAll('.alert-card[data-saved="1"]').forEach(c => c.remove());
-    list.filter(p => (p.latest_status === 'متوسطة' || p.latest_status === 'متقدمة') && !liveShown.has(p.palm_id))
+    const tsMs = v => { let t = String(v || '').replace(' ', 'T'); if(t && !/(Z|[+-]\d\d:?\d\d)$/.test(t)) t += 'Z'; return new Date(t).getTime(); };
+    const WEEK = 7 * 24 * 3600 * 1000;   // نعرض المحفوظ من آخر ٧ أيام فقط، حتى لا تظهر بيانات تجارب قديمة
+    const lang = getLang();
+    const hot = list.filter(p => (p.latest_status === 'متوسطة' || p.latest_status === 'متقدمة') && (Date.now() - tsMs(p.latest_check)) < WEEK);
+    // أي قراءة جديدة لم نرها (ولم يصل عنها تنبيه حي قبل لحظات) تُعامل كتنبيه جديد: صوت + إشعار
+    // وفي أول فتح للصفحة: فقط ما حدث خلال آخر ٣ دقائق، حتى لا تصدر الصفحة صوتًا لقراءات قديمة
+    hot.forEach(p => {
+      const key = p.palm_id + '|' + p.latest_check;
+      if(knownKeys.has(key)) return;
+      knownKeys.add(key);
+      const age = Date.now() - tsMs(p.latest_check);
+      const alreadyLive = liveAt[p.palm_id] && (Date.now() - liveAt[p.palm_id] < 45000);
+      const fresh = firstPoll ? age < 180000 : !alreadyLive;
+      if(fresh && !alreadyLive){
+        liveShown.delete(p.palm_id);
+        alertEffects(p.palm_id, CLASS_LABEL[lang][CLASS_MAP[p.latest_status]] || p.latest_status);
+      }
+    });
+    firstPoll = false;
+    const shown = hot.filter(p => !liveShown.has(p.palm_id))
         .sort((a, b) => String(b.latest_check || '').localeCompare(String(a.latest_check || '')))
-        .slice(0, 10).reverse()
-        .forEach(p => addAlertCard({ palm_id:p.palm_id, location:p.location, severity:p.latest_status, score:p.latest_score || 0,
+        .slice(0, 10);
+    const sig = shown.map(p => p.palm_id + '|' + p.latest_check).join(';');
+    if(sig === lastSig) return;          // لا تغيير: لا نعيد رسم البطاقات
+    lastSig = sig;
+    document.querySelectorAll('.alert-card[data-saved="1"]').forEach(c => c.remove());
+    shown.slice().reverse().forEach(p => addAlertCard({ palm_id:p.palm_id, location:p.location, severity:p.latest_status, score:p.latest_score || 0,
                                      recommendation:'', farm_contact:null, sensor_location:null, timestamp:p.latest_check, saved:true }));
   }catch(e){ /* صامت: التنبيهات الحية تعمل بدونه */ }
 }
 loadSavedAlerts();
 document.addEventListener('visibilitychange', () => { if(!document.hidden) loadSavedAlerts(); });
+setInterval(() => { if(!document.hidden) loadSavedAlerts(); }, 8000);   // يلتقط التنبيه حتى لو انقطع الاتصال الحي
 
 function connect(){
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${proto}://${API_HOST}/ws/alerts`);
 
+  let ka = null;
   ws.onopen = () => {
+    ka = setInterval(() => { try{ if(ws.readyState === 1) ws.send('ping'); }catch(e){} }, 25000);   // يمنع الوسيط من إغلاق اتصال خامل
     loadSavedAlerts();
     document.getElementById('statusDot').className = 'dot on';
     document.getElementById('statusText').textContent = UI_TEXT[getLang()].connected;
   };
   ws.onclose = () => {
+    if(ka) clearInterval(ka);
     document.getElementById('statusDot').className = 'dot off';
     document.getElementById('statusText').textContent = UI_TEXT[getLang()].disconnected;
     setTimeout(connect, 3000);

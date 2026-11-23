@@ -50,6 +50,7 @@ import demo_report  # noqa: E402
 from locate import locate_signs_from_image  # noqa: E402
 from sensor_location import locate_from_json, save_latest, get_latest, demo_location  # noqa: E402
 from owner_gate import OwnerGate  # noqa: E402
+from phone_push import send_phone_push  # noqa: E402
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "nakhla.db")
@@ -634,6 +635,8 @@ async def predict_full(
             "sensor_location": sensor_location,
             "timestamp": datetime.utcnow().isoformat(),
         })
+        # إشعار على الجوال (ntfy) حتى لو كانت صفحة الموقع مغلقة؛ لا يعمل إلا إذا ضُبط NAKHLA_NTFY_TOPIC في Render
+        send_phone_push(palm_id, fusion_result["final_class"], saved_location)
 
     return JSONResponse({
         "audio_result": audio_result,
@@ -645,6 +648,13 @@ async def predict_full(
         "needs_attention": fusion_result["final_class"] in ALERT_LEVELS,
         "reading_id": reading_id,
     })
+
+
+@app.get("/push-test")
+def push_test():
+    """اختبار ربط إشعارات الجوال: افتح /push-test وأنت مسجّل الدخول كمالك، فيصل إشعار تجريبي لجوالك."""
+    configured, sent = send_phone_push("test", "test", test=True, wait=True)
+    return JSONResponse({"configured": configured, "sent": sent})
 
 
 @app.get("/device/status")

@@ -415,6 +415,24 @@ window.addEventListener('message', e => { if (e.data && e.data.type === 'nk-embe
 function openTrunkFull(btn){ const f = document.getElementById('trunkFrame'); if (f && window.__trunkBase) { f.style.height = '640px'; f.src = window.__trunkBase + '&autocam=1'; } if (btn) btn.remove(); }
 const SAMPLE_FILES = { healthy: '1_healthy.wav', early: '2_early.wav', moderate: '3_moderate.wav', advanced: '4_advanced.wav' };
 window.__pickedSample = null;
+// ---- تنبيه محلي (صوت + اهتزاز + إشعار المتصفح) عند نتيجة متوسطة/متقدمة، من الصفحة نفسها ----
+let __AC = null;
+function nkUnlockAudio(){   // يُستدعى من لمسة المستخدم، لأن المتصفحات تمنع الصوت قبلها
+  try{ const C = window.AudioContext || window.webkitAudioContext; if(!C) return; if(!__AC) __AC = new C(); if(__AC.state === 'suspended') __AC.resume(); }catch(e){}
+  try{ if(typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission().catch(()=>{}); }catch(e){}
+}
+function nkLocalAlert(label, palmId, lang){
+  try{
+    nkUnlockAudio();
+    if(__AC){ const now = __AC.currentTime; for(let i = 0; i < 3; i++){ const o = __AC.createOscillator(), g = __AC.createGain(); o.connect(g); g.connect(__AC.destination); o.frequency.value = 880; const st = now + i * 0.55; g.gain.setValueAtTime(0.25, st); g.gain.setValueAtTime(0.0001, st + 0.4); o.start(st); o.stop(st + 0.4); } }
+  }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([300,150,300,150,300]); }catch(e){}
+  try{
+    if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+      new Notification(lang === 'en' ? '⚠️ NakhlaGuard alert: ' + palmId : lang === 'ur' ? '⚠️ NakhlaGuard الرٹ: ' + palmId : '⚠️ تنبيه NakhlaGuard: ' + palmId, { body: label });
+    }
+  }catch(e){}
+}
 function getAudioFile(){
   const fi = document.getElementById('audioFile');
   return (fi.files && fi.files.length) ? fi.files[0] : window.__pickedSample;
@@ -426,6 +444,7 @@ function showSampleError(msg){
   try{ rd.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
 }
 async function useSample(key){
+  nkUnlockAudio();
   const t = UI_TEXT[getLang()];
   const chips = document.querySelectorAll('.chip');
   chips.forEach(c => { c.disabled = true; c.style.opacity = '.6'; });
@@ -507,6 +526,7 @@ function formatReport(text){
 }
 
 async function analyze(){
+  nkUnlockAudio();
   const lang = getLang();
   const t = UI_TEXT[lang];
   const palmId = document.getElementById('palmId').value || 'Test-Palm';
@@ -588,6 +608,7 @@ async function analyze(){
       <button type="button" id="pdfBtn" class="pdf-btn" onclick="printReport()">${t.downloadPdf}</button>
     `;
     try{ resultDiv.scrollIntoView({behavior:'smooth', block:'start'}); }catch(_){}
+    if(data.needs_attention) nkLocalAlert(labels[cls], palmId, lang);
     document.getElementById('pdfPalmId').textContent = palmId;
     document.getElementById('pdfDate').textContent = new Date().toLocaleString();
     loadSavedPalms();
