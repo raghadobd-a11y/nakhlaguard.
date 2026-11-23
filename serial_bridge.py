@@ -22,10 +22,15 @@ import os
 import sys
 import time
 import getpass
-import numpy as np
-import requests
-import serial
-from scipy.io import wavfile
+try:
+    import numpy as np
+    import requests
+    import serial
+    from scipy.io import wavfile
+except ImportError as _e:
+    print("ينقص البرنامج مكتبة:", getattr(_e, "name", _e))
+    print("نفّذ هذا الأمر ثم أعد التشغيل:  pip install pyserial requests numpy scipy")
+    sys.exit(1)
 
 SAMPLE_RATE = 4000  # يجب أن يطابق SAMPLE_RATE بملف الأردوينو وfeatures.py
 BAUD = 250000       # يجب أن يطابق Serial.begin بملف الأردوينو
@@ -37,15 +42,45 @@ REQUEST_TIMEOUT = 120   # الموقع المجاني على Render قد يحت�
 DEFAULT_PALM_ID = "Palm-A12"  # يستخدم بس لو ضغطتِ Enter بدون كتابة رقم جديد
 
 
+START_WAIT = int(os.environ.get("NAKHLA_START_WAIT", "20"))   # أقصى انتظار لإشارة START من الأردوينو (ثوانٍ)
+RECORD_WAIT = 60                                                # أقصى مدة لاستقبال التسجيل بعد START
+
+
+def explain_silence(seen):
+    """يشرح سبب عدم وصول START من الأردوينو، حسب ما وصل فعلًا من المنفذ."""
+    if not seen:
+        print("لم يصل أي شيء من الأردوينو خلال", START_WAIT, "ثانية. جرّب بالترتيب:")
+        print("  ١) تأكد أن الملف المرفوع على اللوحة هو nakhla_sensor_uno.ino (وليس nakhla_sensor.ino)")
+        print("  ٢) أغلق Serial Monitor و Serial Plotter في برنامج Arduino، فهما يحجزان المنفذ")
+        print("  ٣) بدّل كيبل USB (بعض الكيبلات للشحن فقط) أو بدّل المنفذ")
+    else:
+        print("وصلت رسائل من الأردوينو لكنها ليست START. أول ما وصل:", seen)
+        print("  - إن كانت رموزًا غريبة فالسرعة غير متطابقة: يجب أن تكون Serial.begin(250000) في الأردوينو")
+        print("  - إن كانت READY فقط، أخرج الكيبل وأعد توصيله ثم جرّب من جديد")
+
+
 def read_one_recording(ser):
-    """يقرأ تسجيل واحد كامل بين إشارتي START و END من Arduino."""
+    """يقرأ تسجيل واحد كامل بين إشارتي START و END من Arduino. يرجع (None, None) إن لم يكتمل."""
     samples = []
+    seen = []                     # أول الأسطر الواصلة، للتشخيص فقط
+    t_wait = time.time()
+    t_rec = None
     print("في انتظار بدء التسجيل (يرسل الجسر الأمر تلقائيًا؛ وزر D2 اختياري)...")
     while True:
         line = ser.readline().decode(errors="ignore").strip()
+        now = time.time()
+        if line and len(seen) < 3:
+            seen.append(line[:40])
+        if t_rec is None and now - t_wait > START_WAIT:
+            explain_silence(seen)
+            return None, None
+        if t_rec is not None and now - t_rec > RECORD_WAIT:
+            print(f"توقف الاستقبال قبل الانتهاء (وصلت {len(samples)} عينة). أعد المحاولة.")
+            return None, None
         if line == "START":
             print("جارٍ استقبال العينات...")
             samples = []
+            t_rec = now
         elif line == "END":
             # الأردوينو يطبع بعدها ELAPSED_MS,<ملّي ثانية>: زمن التسجيل الفعلي
             elapsed = None
@@ -174,7 +209,13 @@ def main():
     print(f"الموقع: {BASE_URL}")
     wake_server(BASE_URL)
 
-    ser = serial.Serial(port, BAUD, timeout=2)
+    try:
+        ser = serial.Serial(port, BAUD, timeout=2)
+    except Exception as e:
+        print(f"تعذّر فتح المنفذ {port}.")
+        print("  غالبًا Serial Monitor أو Serial Plotter مفتوح في برنامج Arduino فأغلقه، أو رقم المنفذ خطأ.")
+        print("  (التفاصيل التقنية:", e, ")")
+        sys.exit(1)
     time.sleep(2)  # وقت إعادة تشغيل Arduino بعد فتح المنفذ
 
     # يحفظ آخر رقم نخلة استُخدم، عشان لو تفحصين نفس النخلة مرتين على التوالي
@@ -191,9 +232,11 @@ def main():
         ser.write(b"R")   # يطلب من الأردوينو بدء تسجيل (ما تحتاجين زرًا)
 
         samples, elapsed = read_one_recording(ser)
+        if samples is None:
+            continue
         samples = fix_rate(samples, elapsed)
         if len(samples) < SAMPLE_RATE:  # تسجيل ناقص/فاشل
-            print("التسجيل قصير جدًا فتم تجاهله. حاوِل مرة أخرى.")
+            print(f"التسجيل قصير جدًا ({len(samples)} عينة، والمطلوب {SAMPLE_RATE} على الأقل) فتم تجاهله. حاوِل مرة أخرى.")
             continue
 
         wav_path = "recording_tmp.wav"
@@ -211,4 +254,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, EOFError):
+        print("\nتم الإيقاف.")
