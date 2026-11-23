@@ -10,7 +10,7 @@
   :root{
     --ink:#14201B; --ink-soft:#4A5750; --sand:#EDE6D6; --sand-deep:#E1D8C2;
     --palm:#1F5C4A; --palm-deep:#123A2E; --date:#B8752E;
-    --moderate:#C1650E; --advanced:#A63D40; --card:#FBF9F3;
+    --early:#B8860B; --moderate:#C1650E; --advanced:#A63D40; --card:#FBF9F3;
   }
   *{box-sizing:border-box; margin:0; padding:0}
   body{
@@ -43,6 +43,8 @@
     border-right:5px solid #ccc; animation:slideIn .3s ease-out;
   }
   body.rtl .alert-card{border-right:none; border-left:5px solid #ccc}
+  .alert-card.early{border-right-color:var(--early)}
+  body.rtl .alert-card.early{border-left-color:var(--early)}
   .alert-card.moderate{border-right-color:var(--moderate)}
   .alert-card.advanced{border-right-color:var(--advanced)}
   body.rtl .alert-card.moderate{border-left-color:var(--moderate)}
@@ -61,6 +63,7 @@
   .device-status.off{background:#FAECE7; color:#7A2E1A}
   .alert-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px}
   .badge{padding:4px 12px; border-radius:20px; font-weight:700; font-size:.78rem; color:#fff}
+  .badge.early{background:var(--early)}
   .badge.moderate{background:var(--moderate)} .badge.advanced{background:var(--advanced)}
   .time{font-size:.75rem; color:var(--ink-soft)}
   .palm-id{font-weight:700; font-family:'Space Grotesk',sans-serif}
@@ -317,14 +320,17 @@ function playBeep(times = 3){
   }catch(e){}
 }
 // صوت + اهتزاز + إشعار المتصفح عند وصول تنبيه جديد (الإشعار يعمل متى مُنحت الصلاحية، حتى لو لم يُضغط الزر في هذه الزيارة)
-function alertEffects(palmId, severityLabel){
+function alertEffects(palmId, severityLabel, early){
   const lang = getLang();
-  if(soundEnabled) playBeep();
-  try{ if(navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); }catch(e){}
+  if(soundEnabled) playBeep(early ? 1 : 3);   // المبكرة: نغمة واحدة وبلا اهتزاز؛ المتوسطة والمتقدمة: ثلاث نغمات واهتزاز
+  try{ if(!early && navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); }catch(e){}
   if(notifyAllowed()){
-    try{ new Notification(UI_TEXT[lang].alertTitle(palmId), { body: UI_TEXT[lang].alertBody(severityLabel) }); }catch(e){}
+    try{ new Notification(UI_TEXT[lang].alertTitle(palmId), { body: early ? UI_TEXT[lang].alertBodyEarly : UI_TEXT[lang].alertBody(severityLabel) }); }catch(e){}
   }
 }
+Object.assign(UI_TEXT.en, { alertBodyEarly:"Early suspicion — re-check soon" });
+Object.assign(UI_TEXT.ar, { alertBodyEarly:"اشتباه مبكر — أعد الفحص قريبًا" });
+Object.assign(UI_TEXT.ur, { alertBodyEarly:"ابتدائی شبہ — جلد دوبارہ جانچ کریں" });
 
 function urWeekDay(t){ return getLang() === 'ur' ? t.replace(/^(\s*)Week\s+(\d+)/gim, '$1ہفتہ $2').replace(/^(\s*)Day\s+(\d+)/gim, '$1دن $2') : t; }
 function prettyRec(t){ return urWeekDay(prettyRecBase(t)); }
@@ -368,7 +374,7 @@ function addAlertCard(data){
   `;
   container.prepend(card);
 
-  if(!data.saved){ liveAt[data.palm_id] = Date.now(); alertEffects(data.palm_id, severityLabel); }
+  if(!data.saved){ liveAt[data.palm_id] = Date.now(); alertEffects(data.palm_id, severityLabel, severityKey === 'early'); }
 }
 
 Object.assign(UI_TEXT.en, { savedNote:"Saved from the latest check of this palm (shown again because this page was opened or woke up after the check)." });
@@ -385,7 +391,7 @@ async function loadSavedAlerts(){
     const tsMs = v => { let t = String(v || '').replace(' ', 'T'); if(t && !/(Z|[+-]\d\d:?\d\d)$/.test(t)) t += 'Z'; return new Date(t).getTime(); };
     const WEEK = 7 * 24 * 3600 * 1000;   // نعرض المحفوظ من آخر ٧ أيام فقط، حتى لا تظهر بيانات تجارب قديمة
     const lang = getLang();
-    const hot = list.filter(p => (p.latest_status === 'متوسطة' || p.latest_status === 'متقدمة') && (Date.now() - tsMs(p.latest_check)) < WEEK);
+    const hot = list.filter(p => (p.latest_status === 'مبكرة' || p.latest_status === 'متوسطة' || p.latest_status === 'متقدمة') && (Date.now() - tsMs(p.latest_check)) < WEEK);
     // أي قراءة جديدة لم نرها (ولم يصل عنها تنبيه حي قبل لحظات) تُعامل كتنبيه جديد: صوت + إشعار
     // وفي أول فتح للصفحة: فقط ما حدث خلال آخر ٣ دقائق، حتى لا تصدر الصفحة صوتًا لقراءات قديمة
     hot.forEach(p => {
@@ -397,7 +403,7 @@ async function loadSavedAlerts(){
       const fresh = firstPoll ? age < 180000 : !alreadyLive;
       if(fresh && !alreadyLive){
         liveShown.delete(p.palm_id);
-        alertEffects(p.palm_id, CLASS_LABEL[lang][CLASS_MAP[p.latest_status]] || p.latest_status);
+        alertEffects(p.palm_id, CLASS_LABEL[lang][CLASS_MAP[p.latest_status]] || p.latest_status, CLASS_MAP[p.latest_status] === 'early');
       }
     });
     firstPoll = false;

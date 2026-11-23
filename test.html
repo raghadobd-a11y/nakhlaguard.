@@ -421,12 +421,12 @@ function nkUnlockAudio(){   // يُستدعى من لمسة المستخدم، �
   try{ const C = window.AudioContext || window.webkitAudioContext; if(!C) return; if(!__AC) __AC = new C(); if(__AC.state === 'suspended') __AC.resume(); }catch(e){}
   try{ if(typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission().catch(()=>{}); }catch(e){}
 }
-function nkLocalAlert(label, palmId, lang){
+function nkLocalAlert(label, palmId, lang, early){
   try{
     nkUnlockAudio();
-    if(__AC){ const now = __AC.currentTime; for(let i = 0; i < 3; i++){ const o = __AC.createOscillator(), g = __AC.createGain(); o.connect(g); g.connect(__AC.destination); o.frequency.value = 880; const st = now + i * 0.55; g.gain.setValueAtTime(0.25, st); g.gain.setValueAtTime(0.0001, st + 0.4); o.start(st); o.stop(st + 0.4); } }
+    if(__AC){ const now = __AC.currentTime; for(let i = 0; i < (early ? 1 : 3); i++){ const o = __AC.createOscillator(), g = __AC.createGain(); o.connect(g); g.connect(__AC.destination); o.frequency.value = 880; const st = now + i * 0.55; g.gain.setValueAtTime(0.25, st); g.gain.setValueAtTime(0.0001, st + 0.4); o.start(st); o.stop(st + 0.4); } }
   }catch(e){}
-  try{ if(navigator.vibrate) navigator.vibrate([300,150,300,150,300]); }catch(e){}
+  try{ if(!early && navigator.vibrate) navigator.vibrate([300,150,300,150,300]); }catch(e){}
   try{
     if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
       new Notification(lang === 'en' ? '⚠️ NakhlaGuard alert: ' + palmId : lang === 'ur' ? '⚠️ NakhlaGuard الرٹ: ' + palmId : '⚠️ تنبيه NakhlaGuard: ' + palmId, { body: label });
@@ -608,7 +608,7 @@ async function analyze(){
       <button type="button" id="pdfBtn" class="pdf-btn" onclick="printReport()">${t.downloadPdf}</button>
     `;
     try{ resultDiv.scrollIntoView({behavior:'smooth', block:'start'}); }catch(_){}
-    if(data.needs_attention) nkLocalAlert(labels[cls], palmId, lang);
+    if(data.needs_attention || cls === 'early') nkLocalAlert(labels[cls], palmId, lang, cls === 'early');
     document.getElementById('pdfPalmId').textContent = palmId;
     document.getElementById('pdfDate').textContent = new Date().toLocaleString();
     loadSavedPalms();

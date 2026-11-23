@@ -512,6 +512,8 @@ def set_farm_contact(contact_name, contact_phone):
 # ---------- نظام الإشعارات الفورية (WebSocket) ----------
 # الحد الأدنى لشدة الإصابة اللي يستدعي إرسال إشعار للمزارع
 ALERT_LEVELS = {"متوسطة", "متقدمة"}
+# مستويات يصدر عنها تنبيه (اللوحة + الجوال): المبكرة بنبرة أخف (اشتباه، أعد الفحص)، والمتوسطة والمتقدمة عاجلة
+NOTIFY_LEVELS = ALERT_LEVELS | {"مبكرة"}
 DEMO_LOCATION = os.environ.get("NAKHLA_DEMO_LOCATION", "1") != "0"
 LAST_DEVICE = {}      # آخر قراءة وصلت من جهاز المستشعرات (في الذاكرة فقط؛ تُصفَّر عند إعادة تشغيل الخادم)
 
@@ -623,7 +625,7 @@ async def predict_full(
     # إرسال إشعار فوري للمزارع لو الحالة وصلت لمستوى خطورة يستدعي تنبيه
     # - نرفق جهة الاتصال الاحتياطية (لو مسجّلة) عشان لو صاحب المزرعة مو
     #   متوفر، يبان بنفس التنبيه مين يتواصلون معه بدلًا عنه
-    if fusion_result["final_class"] in ALERT_LEVELS:
+    if fusion_result["final_class"] in NOTIFY_LEVELS:
         await broadcast_alert({
             "type": "alert",
             "palm_id": palm_id,

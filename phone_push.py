@@ -56,9 +56,15 @@ def send_phone_push(palm_id, severity, location=None, test=False, wait=False):
     if test:
         title, message, prio = "🌴 اختبار NakhlaGuard", "إذا ظهر هذا الإشعار على جوالك فالربط يعمل.", 3
     else:
-        title = f"🌴 NakhlaGuard: اشتباه إصابة {severity}"
-        message = f"النخلة {palm_id}" + (f" — {location}" if location else "") + "\nافتح الموقع لرؤية التفاصيل."
-        prio = 5 if severity == "متقدمة" else 4
+        where = f" — {location}" if location else ""
+        if severity == "مبكرة":      # أخف: اشتباه مبكر، لا إنذار عاجل
+            title = "🌴 NakhlaGuard: اشتباه مبكر"
+            message = f"النخلة {palm_id}{where}\nأعد الفحص قريبًا وتواصل مع المرشد الزراعي."
+            prio = 3
+        else:
+            title = f"🌴 NakhlaGuard: اشتباه إصابة {severity}"
+            message = f"النخلة {palm_id}{where}\nافتح الموقع لرؤية التفاصيل."
+            prio = 5 if severity == "متقدمة" else 4
     payload = {"topic": topic, "title": title, "message": message, "priority": prio, "tags": ["warning"]}
     site = (os.environ.get("NAKHLA_SITE_URL", "") or "").strip()
     if site.startswith("http"):
