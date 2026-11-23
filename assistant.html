@@ -27,10 +27,10 @@
   .chat .who{ font-size:.74rem; font-weight:700; color:var(--ink-soft) }
   .chat .msg{ border-radius:12px; padding:10px 13px; font-size:.95rem; line-height:1.9; white-space:pre-wrap; word-break:break-word }
   .chat .msg.you{ background:var(--sand-deep); color:var(--ink) }
-  .chat .msg.bot{ background:var(--palm); color:#fff }
+  .chat .msg.bot{ background:#fff; color:var(--ink); border:1px solid var(--sand-deep); border-inline-start:4px solid var(--palm) }
   .chat .msg.wait{ opacity:.75 }
   .chat .tool{ background:#EAF3EE; color:#123A2E; border:1px solid #cfe3d8; border-radius:999px; padding:5px 14px; font-size:.84rem; margin-inline:14px; align-self:flex-start }
-  .log{ display:grid; gap:8px; max-height:60vh; overflow:auto; padding:2px } .log:empty{ display:none }
+  .log{ display:grid; gap:10px; max-height:68vh; overflow:auto; padding:2px } .log:empty{ display:none }
   .cachedtag{ font-size:.74rem; color:var(--palm-deep); opacity:.75; margin:-4px 4px 6px }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
   .chips button{ font:inherit; font-size:.82rem; cursor:pointer; color:var(--palm-deep); background:#fff; border:1px solid var(--sand-deep); border-radius:999px; padding:5px 12px }
@@ -48,6 +48,32 @@
   .cta a.fill{ background:var(--palm); color:#fff }
   body.lang-ur, body.lang-ur *:not(code){ font-family:'Noto Nastaliq Urdu','Noto Naskh Arabic','Tajawal',serif !important }
   body.lang-ur{ line-height:2.1 } body.lang-ur h1, body.lang-ur h2, body.lang-ur h3{ line-height:2 }
+/* ===== «حارس»: شكل إجابات المحادثة (مشترك بين صفحة المساعد وصفحتي المالك) ===== */
+.nkb{align-self:flex-start; max-width:min(100%,680px); background:#fff; color:#14201B; border:1px solid #E1D8C2; border-inline-start:4px solid #1F5C4A; border-radius:12px; padding:12px 15px; font-size:.95rem; line-height:1.85; box-shadow:0 1px 3px rgba(20,32,27,.07); text-align:start; white-space:normal; word-break:break-word}
+.nkb-h{display:flex; align-items:center; gap:8px; margin-bottom:6px}
+.nkb-av{width:26px; height:26px; border-radius:50%; background:#1F5C4A; color:#fff; display:grid; place-items:center; font-weight:700; font-size:.85rem; flex-shrink:0}
+.nkb-h b{font-size:.9rem; color:#123A2E}
+.nkb-tag{margin-inline-start:auto; font-size:.7rem; font-weight:700; padding:2px 10px; border-radius:999px; white-space:nowrap}
+.nkb-tag.ai{background:#E4F1E8; color:#1c5a3a}
+.nkb-tag.rd{background:#F5ECD2; color:#7a5a12}
+.nkb-t{display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin:2px 0 9px; font-size:.76rem; color:#4A5750}
+.nkb-t i{font-style:normal; background:#EAF3EE; border:1px solid #cfe3d8; color:#123A2E; border-radius:999px; padding:2px 10px}
+.nkb-note{font-size:.8rem; background:#FBF3DC; border:1px solid #EBD9A6; color:#6b4e0d; border-radius:8px; padding:6px 10px; margin:0 0 9px; line-height:1.7}
+.nkb p{margin:0 0 8px}
+.nkb p.lead{font-weight:700; color:#123A2E; margin-bottom:3px}
+.nkb h4{font-size:.95rem; color:#123A2E; margin:10px 0 4px; font-weight:700}
+.nkb ul,.nkb ol{margin:0 0 8px; padding-inline-start:22px}
+.nkb li{margin:4px 0}
+.nkb strong{color:#123A2E}
+.nkb hr{border:0; border-top:1px solid #E1D8C2; margin:8px 0}
+.nkb .pid{font-weight:700; background:#EDE6D6; border-radius:6px; padding:0 6px; font-size:.9em; white-space:nowrap}
+.nkb .st{font-weight:700; border-radius:999px; padding:0 9px; font-size:.88em; white-space:nowrap}
+.nkb .st-adv{background:#F6D9D6; color:#8f1f18}
+.nkb .st-mod{background:#FBE3CC; color:#9a4a0b}
+.nkb .st-early{background:#F7EDC6; color:#7a5a0b}
+.nkb .st-ok{background:#DDEFE3; color:#1c5a3a}
+.nkb code{background:#F1ECDD; border-radius:5px; padding:0 5px; font-size:.9em}
+.nkb > :last-child{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -157,9 +183,8 @@ function send(q){
       clearTimeout(slowTimer); clearTimeout(killTimer);
       wait.remove();
       if(!x.ok){ add('msg bot', x.st === 403 ? t.off : x.st === 429 ? t.limit : t.err); return; }
-      (x.j.trace || []).forEach(tr => add('tool', stepText(tr)));
-      const b = add('msg bot', x.j.answer || t.err);
-      if(x.j.cached){ const c = document.createElement('div'); c.className = 'cachedtag'; c.textContent = t.cached; $('log').appendChild(c); $('log').scrollTop = $('log').scrollHeight; }
+      if(!x.j.answer){ add('msg bot', t.err); return; }
+      $('log').appendChild(nkBotEl(x.j, getLang())); $('log').scrollTop = $('log').scrollHeight;
     })
     .catch(() => { clearTimeout(slowTimer); clearTimeout(killTimer); wait.remove(); add('msg bot', t.err); })
     .then(() => { busy = false; $('btn').disabled = false; });
@@ -173,5 +198,71 @@ try {
 } catch(e){}
 </script>
 <script src="/nav.js" defer></script>
+<script>
+/* ===== «حارس»: عرض الإجابة (ماركداون خفيف + أسماء أدوات مفهومة). لا يغيّر أي منطق: يعرض النص فقط. ===== */
+const NK_L = {
+  ar: { who:"حارس", av:"ح", ai:"ذكاء اصطناعي", rd:"إجابة جاهزة", saved:"إجابة محفوظة", tools:"الأدوات التي استعملها:" },
+  en: { who:"Haris", av:"H", ai:"AI", rd:"Ready-made answer", saved:"Saved answer", tools:"Tools it used:" },
+  ur: { who:"حارس", av:"ح", ai:"AI", rd:"تیار جواب", saved:"محفوظ جواب", tools:"استعمال شدہ ٹولز:" },
+};
+const NK_STEP = {
+  list_palms: {en:'📋 Looking at the palms', ar:'📋 يعرض النخيل', ur:'📋 کھجوریں دیکھ رہا ہے'},
+  get_palm_details: {en:'🔍 Reading the details of {p}', ar:'🔍 يقرأ تفاصيل {p}', ur:'🔍 {p} کی تفصیل پڑھ رہا ہے'},
+  palms_needing_attention: {en:'🔎 Palms that need attention', ar:'🔎 النخيل التي تحتاج انتباهًا', ur:'🔎 توجہ طلب کھجوریں'},
+  palms_due_for_recheck: {en:'📅 Palms due for a re-check', ar:'📅 النخيل المستحقة لإعادة الفحص', ur:'📅 دوبارہ جانچ کی منتظر کھجوریں'},
+  get_farm_contact: {en:'📞 Farm backup contact', ar:'📞 جهة الاتصال الاحتياطية', ur:'📞 فارم کا متبادل رابطہ'},
+};
+const NK_STATUS = [
+  ["إصابة متقدمة","adv"],["إصابة متوسطة","mod"],["إصابة مبكرة","early"],["سليمة","ok"],
+  ["advanced infestation","adv"],["moderate infestation","mod"],["early infestation","early"],["healthy","ok"],
+  ["شدید انفیکشن","adv"],["درمیانی انفیکشن","mod"],["ابتدائی انفیکشن","early"],["صحت مند","ok"],
+];
+const NK_STATUS_RE = new RegExp(NK_STATUS.map(x => x[0]).join('|'), 'g');
+function nkEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function nkInline(s, isItem){
+  let h = nkEsc(s);
+  if(isItem) h = h.replace(NK_STATUS_RE, m => `<span class="st st-${(NK_STATUS.find(x => x[0] === m) || [0,'ok'])[1]}">${m}</span>`);
+  return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/\b(Palm-[A-Za-z]\d{1,2})\b/g, '<bdi dir="ltr" class="pid">$1</bdi>');
+}
+// يحوّل نص الإجابة إلى HTML آمن: فقرات، قوائم نقطية ومرقّمة، عناوين، **غامق**. (النص يُهرَّب أولًا، فلا يدخل أي وسم من الخادم.)
+function nkMd(text){
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  let out = '', list = null, para = [];
+  const flushPara = () => { if(para.length){ const joined = para.join('\n'); const lead = /[:：]\s*$/.test(joined) ? ' class="lead"' : ''; out += `<p${lead}>${para.map(x => nkInline(x)).join('<br>')}</p>`; para = []; } };
+  const closeList = () => { if(list){ out += `</${list}>`; list = null; } };
+  for(const raw of lines){
+    const line = raw.trimEnd();
+    let m;
+    if(!line.trim()){ flushPara(); closeList(); continue; }
+    if(/^\s*([-*_])\1{2,}\s*$/.test(line)){ flushPara(); closeList(); out += '<hr>'; continue; }
+    if((m = line.match(/^\s*#{1,6}\s+(.*)$/))){ flushPara(); closeList(); out += `<h4>${nkInline(m[1])}</h4>`; continue; }
+    if((m = line.match(/^\s*[-*•]\s+(.*)$/))){ flushPara(); if(list !== 'ul'){ closeList(); out += '<ul>'; list = 'ul'; } out += `<li>${nkInline(m[1], true)}</li>`; continue; }
+    if((m = line.match(/^\s*\d+[.)]\s+(.*)$/))){ flushPara(); if(list !== 'ol'){ closeList(); out += '<ol>'; list = 'ol'; } out += `<li>${nkInline(m[1], true)}</li>`; continue; }
+    closeList(); para.push(line);
+  }
+  flushPara(); closeList();
+  return out;
+}
+function nkToolLabel(tr, lang){ const d = NK_STEP[tr && tr.tool]; if(!d) return '⚙️ ' + ((tr && tr.tool) || ''); const a = (tr && tr.args) || {}; return (d[lang] || d.en).replace('{p}', a.palm_id || a.palm || ''); }
+// عنصر إجابة «حارس»: رأس (الاسم + هل هي من الذكاء الاصطناعي أو جاهزة) ← الأدوات ← الجواب منسّقًا
+function nkBotEl(data, lang){
+  const d = document.createElement('div'); d.className = 'nkb';
+  const L = NK_L[lang] || NK_L.en; const answer = String((data && data.answer) || '');
+  try{
+    let body = answer, note = '';
+    const m = body.match(/^\s*((?:ملاحظة|Note|نوٹ)\s*[:：][^\n]*)\n?/);
+    if(m){ note = m[1]; body = body.slice(m[0].length); }
+    const tag = data && data.fallback ? `<span class="nkb-tag rd">${L.rd}</span>` : data && data.cached ? `<span class="nkb-tag ai">${L.saved}</span>` : `<span class="nkb-tag ai">${L.ai}</span>`;
+    const tr = (data && data.trace) || [];
+    d.innerHTML = `<div class="nkb-h"><span class="nkb-av">${L.av}</span><b>${L.who}</b>${tag}</div>`
+      + (tr.length ? `<div class="nkb-t"><span>${L.tools}</span>${tr.map(x => `<i>${nkEsc(nkToolLabel(x, lang))}</i>`).join('')}</div>` : '')
+      + (note ? `<div class="nkb-note">${nkEsc(note)}</div>` : '')
+      + nkMd(body);
+  }catch(e){ d.textContent = answer; }
+  return d;
+}
+</script>
 </body>
 </html>
