@@ -172,6 +172,10 @@ DEMO_WAVS = {"1_healthy.wav", "2_early.wav", "3_moderate.wav", "4_advanced.wav",
 @app.get("/demo-wav/{name}")
 def demo_wav(name: str):
     path = os.path.join(BASE_DIR, "demo_wavs", name)
+    if name in DEMO_WAVS and not os.path.exists(path):
+        alt = os.path.join(BASE_DIR, name)   # لو رُفعت ملفات الأصوات في جذر المستودع بدل المجلد
+        if os.path.exists(alt):
+            path = alt
     if name not in DEMO_WAVS or not os.path.exists(path):
         return JSONResponse({"error": "sample not found; run make_demo_wavs.py"}, status_code=404)
     return FileResponse(path, media_type="audio/wav")
